@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const user = require('./models/users')
 
 // db connection
 const knex = require('./database');
@@ -29,12 +30,15 @@ const knex = require('./database');
 
 const connectDB = async () => {
 
-    // const allUsers = await 
     console.log("calling knex function");
-
 
 }
 
+
+const readUsers = async () => {
+    const allUsers = await user.query(); 
+    console.log(allUsers);
+}
 
 // db connection
 
@@ -46,13 +50,13 @@ app.get('/', async (req, res) => {
     try
     {
         await connectDB();
+        await readUsers();
         knex.destroy();
     } 
     catch (err)
     {
         console.log(err);
         knex.destroy();
-
     }
 
 });
