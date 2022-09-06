@@ -1,6 +1,6 @@
 const { Model } = require('objection');
 
-class Users extends Model {
+class Orders extends Model {
     // getter for table and its coloumn names
     static get tableName() {
         return 'orders';
@@ -63,4 +63,4 @@ class Users extends Model {
     }
 };
 
-module.exports = Users;
+module.exports = Orders;
