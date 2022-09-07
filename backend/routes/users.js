@@ -20,11 +20,12 @@ router.get('/', auth, async (req, res) => {
                                             .select('cnic', 'email', 'phone_number', 'registration_date')
                                             .where('id', '=', userId);
 
-        res.status(200).send(userDetails);
+        return res.status(200).send(userDetails);
     } 
     catch (err)
     {
         console.log(err);   // remove this print
+        return res.status(400).send('Some error occured');
     }
 
 
@@ -42,10 +43,10 @@ router.put('/', auth, async (req, res) => {
 
         // check if oldPassword is same as in db
         const oldPasswordInDb = await Users.query()
-                                            // .select('password')
+                                            .select('password')
                                             .where('id', '=', userId);
 
-        const oldPasswordToCompare = oldPasswordInDb[0].password.toString();
+        const oldPasswordToCompare = oldPasswordInDb.toString();
         
         if (oldPassword == oldPasswordToCompare)
         {
@@ -59,24 +60,23 @@ router.put('/', auth, async (req, res) => {
                                                     .patch({ password: newPassword })
                                                     .where('id', '=', userId);
 
-                res.status(200).send('Password changed sucessfully');
+                return res.status(200).send('Password changed sucessfully');
             }
             else
             {
-                res.status(400).send(`Invalid new password. ${passwordValidationCheck.error}`);
+                return res.status(400).send(`Invalid new password. ${passwordValidationCheck.error}`);
             }
         }
         else
         {
-            res.status(400).send('Invalid old password');
+            return res.status(400).send('Invalid old password');
         }
     } 
     catch (err)
     {
         console.log(err);   // remove this print
+        return res.status(400).send('Some error occured');
     }
-
-
 });
 
 module.exports = router;
