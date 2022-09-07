@@ -1,11 +1,11 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
-const configurations = require('../models/configurations');   // importing model for this route
+const { Configurations } = require('../models/configurations');   // importing model for this route
 
 // db connection test script 
 const reading = async () => {
-    const fetchAll = await configurations.query(); 
+    const fetchAll = await Configurations.query(); 
     console.log(fetchAll);
 }
 
@@ -14,7 +14,7 @@ const reading = async () => {
 router.get('/', async (req, res) => {
     try
     {
-        console.log("sample configurations call");
+        console.log('sample configurations call');
         await reading(); // db connection test function
     } 
     catch (err)

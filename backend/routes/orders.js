@@ -1,11 +1,11 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
-const orders = require('../models/orders');   // importing model for this route
+const { Orders } = require('../models/orders');   // importing model for this route
 
 // db connection test script 
 const reading = async () => {
-    const fetchAll = await orders.query(); 
+    const fetchAll = await Orders.query(); 
     console.log(fetchAll);
 }
 
@@ -14,7 +14,7 @@ const reading = async () => {
 router.get('/', async (req, res) => {
     try
     {
-        console.log("sample orders call");
+        console.log('sample orders call');
         await reading(); // db connection test function
     } 
     catch (err)

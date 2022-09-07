@@ -7,7 +7,7 @@ module.exports = function(req, res, next) {
 
     try 
     {
-        const decoded = jwt.verify(token, 'token');// 'jwtPrivateKey'); // convert this key into a secret using config
+        const decoded = jwt.verify(token, 'jwtPrivateKey'); // convert this key into a secret using config
         req.user = decoded;
         next();
     } 
