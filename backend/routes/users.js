@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const { knex } = require("../models/users");
+const Joi = require('joi');
+const { knex, query } = require("../models/users");
 const router = express.Router();
 
 // importing model for this route
@@ -18,49 +19,66 @@ const relationalReading = async () => {
 
 // generate Jwt
 
-const generateJwt = async (is_admin) => {
-    const token = await jwt.sign({_admin: is_admin}, 'jwtPrivateKey');
-    if(is_admin) console.log("Admin logged in.");
+const generateJwt = async (query) => {
+    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, 'jwtPrivateKey');
+    if(query.is_admin) console.log("Admin logged in.");
     else console.log("User logged in.");
     return token;
 }
 
-
 // LOGIN function
 
-const userLogin = async (creds) => {
-    // checking type of user
+const inputValid = async (creds) => {
+   
+    let check, validateQuery, query;
 
-    // if(creds.email == null && creds.cnic != null)
-    // {
-    // const validate = await users.query().findOne('cnic', '=', creds.cnic);
-    // if(!validate.is_admin) console.log("user login successful");
-    // }
-    // else if(creds.cnic == null && creds.email != null)
-    // {
-    // const validate = await users.query().findOne('email', '=', creds.email);
-    // if(validate.is_admin) console.log("admin login successful");
-    // }
-    // else
-    // {
-    //     console.log("input is required!");
-    // }
-
-    //alternative method
-
-    console.log(creds.password);
-
-    if(typeof creds.login === "string") {
-        validate = await users.query().findOne('email', '=', creds.login);   
+    if(creds.email == undefined)
+    {
+        check = await validateUser(creds);
+        if(check.error) return false;
+        else {
+            validateQuery = await users.query().findOne('cnic', '=', creds.cnic);
+        }
     }
-    else if(typeof creds.login === "number") {
-        validate = await users.query().findOne('cnic', '=', creds.login);
+    else if(creds.email != undefined)
+    {
+        check = await validateAdmin(creds);
+        if(check.error) return false;
+        else {
+            validateQuery = await users.query().findOne('email', '=', creds.email); 
+
+        }}
+    return await dbValid(check, validateQuery);
     }
-    return await generateJwt(validate.is_admin);
+
+// validation from database
+
+const dbValid = async (creds, validateQuery) => {
+    
+        if(creds.password == validateQuery.password) return validateQuery;
+        else return false;
 
 }
 
+// joi validate
 
+const validateAdmin = async (creds) => {
+    const schema = Joi.object({
+        email: Joi.string().email().required(),
+        password: Joi.string().required()
+    })  
+    return await Joi.validate(creds, schema);
+  }
+  
+const validateUser = async (creds) => {
+  
+    const schema = Joi.object({
+        cnic: Joi.number().required(),
+        password: Joi.string().required()
+    }) 
+  
+    return await Joi.validate(creds, schema);
+  }
 
 // ROUTES
 
@@ -78,17 +96,12 @@ router.get('/', async (req, res) => {
     }
 });
 
-// LOGIN ROUTE
-
 router.post('/login', async(req, res) => {
     try{
-        console.log("login attempted");
-        const logCreds = {
-        login: req.body.login,
-        password: req.body.password
-        }
-        const jwToken = await userLogin(logCreds);
-        res.header('x-auth-token', jwToken).send(200);
+        const logCreds = req.body;
+        const result = await inputValid(logCreds);
+        if(!result) res.send(400);
+        else res.header('x-auth-token', await generateJwt(result)).send(200);
     }
     catch (err)
     {

@@ -84,11 +84,6 @@ class Users extends Model {
     };
 };
 
-    const schema = Joi.object({
-        login: Joi.string().required(),
-        pass: Joi.string().required()
-    })
-
-    
+   
 
 module.exports = Users;
