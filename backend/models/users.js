@@ -1,5 +1,5 @@
 const { Model } = require('objection');
-
+const Joi = require('joi');
 const orders = require('./orders');    // importing order class to define relation
 
 class Users extends Model {
@@ -83,5 +83,12 @@ class Users extends Model {
         };
     };
 };
+
+    const schema = Joi.object({
+        login: Joi.string().required(),
+        pass: Joi.string().required()
+    })
+
+    
 
 module.exports = Users;
