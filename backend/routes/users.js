@@ -30,4 +30,20 @@ router.get('/', auth, async (req, res) => {
 
 });
 
+router.put('/', auth, async (req, res) => {
+    
+    // req.user contains {is_admin, id}
+
+    try
+    {
+        console.log("in put /api/users");
+    } 
+    catch (err)
+    {
+        console.log(err);   // remove this print
+    }
+
+
+});
+
 module.exports = router;
