@@ -1,5 +1,8 @@
 const { Model } = require('objection');
 
+// importing libraries
+const Joi = require('joi');
+
 class Configurations extends Model {
     // getter for table and its coloumn names
     static get tableName() {
@@ -53,5 +56,20 @@ class Configurations extends Model {
     }
 };
 
+const validateConfig = (configs) => {
+
+    const schema = Joi.object({
+        po_reception: Joi.number().required(),
+        factory_floor: Joi.number().required(),
+        vin: Joi.number().required(),
+        chassis: Joi.number().required(),
+        ready_to_ship: Joi.number().required(),
+        arrival_at_vendor: Joi.number().required()
+    })  
+    const result = Joi.validate(configs, schema);
+    return result;
+  }
+
 // module.exports = Configurations;
 exports.Configurations = Configurations;
+exports.validateConfig = validateConfig;
