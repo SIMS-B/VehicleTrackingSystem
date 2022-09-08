@@ -48,4 +48,5 @@ class Configurations extends Model {
     }
 };
 
-module.exports = Configurations;
+// module.exports = Configurations;
+exports.Configurations = Configurations;

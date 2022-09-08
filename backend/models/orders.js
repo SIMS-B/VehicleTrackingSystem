@@ -56,11 +56,12 @@ class Orders extends Model {
                 vehicle_model: { type: 'string' },
                 vehicle_color: { type: 'string' },
                 status: { type: 'string' },
-                starting_date: { type: 'string', format: 'date' },
-                delivery_date: { type: 'string', format: 'date' }
+                starting_date: { type: 'string' },
+                delivery_date: { type: 'string' }
             }
         };
     }
 };
 
-module.exports = Orders;
+// module.exports = Orders;
+exports.Orders = Orders;

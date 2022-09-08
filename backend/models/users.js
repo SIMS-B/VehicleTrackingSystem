@@ -2,6 +2,11 @@ const { Model } = require('objection');
 const Joi = require('joi');
 const orders = require('./orders');    // importing order class to define relation
 
+// importing libraries
+const Joi = require('joi');
+
+// MODEL
+
 class Users extends Model {
     // getter for table and its coloumn names
     static get tableName() {
@@ -62,9 +67,9 @@ class Users extends Model {
                 email: { type: 'string' },
                 phone_number: { type: 'integer' },
                 password: { type: 'string' },
-                registration_date: { type: 'string', format: 'date' },
-                is_verified: { type: 'bool' },
-                is_admin:  { type: 'bool' }
+                registration_date: { type: 'string' },
+                is_verified: { type: 'boolean' },
+                is_admin:  { type: 'boolean' }
             }
         };
     };
@@ -84,6 +89,17 @@ class Users extends Model {
     };
 };
 
-   
+// VALIDATION FUNCTIONS
 
-module.exports = Users;
+function validatePassword(pwd) {
+    
+    const schema = Joi.object({
+        pwd: Joi.string().min(5).max(20) 
+    });
+
+    const result = Joi.validate(pwd, schema);
+    return result;
+}
+
+exports.Users = Users;
+exports.validatePassword = validatePassword;
