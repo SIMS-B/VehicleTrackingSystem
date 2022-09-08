@@ -47,7 +47,7 @@ class Orders extends Model {
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['id', 'user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
+            required: ['user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
             properties: {
                 id: { type: 'integer' },
                 user_id:  { type: 'integer' },
