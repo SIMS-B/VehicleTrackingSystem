@@ -2,10 +2,8 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 
-
-
 // importing model for this route
-const { Users, validatePassword, validateAdmin, validateUser } = require('../models/users');  
+const { Users, validatePassword, validateAdmin, validateUser, validatePhoneNumber, validateEmail } = require('../models/users');  
 
 // importing middleware
 const auth = require('../middleware/auth');
@@ -84,50 +82,125 @@ router.get('/', auth, async (req, res) => {
 
 router.put('/', auth, async (req, res) => {
     
+    // put /api/users/ -> update password OR update phone_number OR update email
+    
     // req.user contains {is_admin, id}
     // req.body contains {oldPassword, newPassword}
-    try
+    const userId = parseInt(req.user.id);
+
+    // flags to check which property to update
+    const oldPasswordCheck = req.body.hasOwnProperty('oldPassword');
+    const newPasswordCheck = req.body.hasOwnProperty('newPassword');
+    const newEmailCheck = req.body.hasOwnProperty('newEmail');
+    const newPhoneNumberCheck = req.body.hasOwnProperty('newPhoneNumber');
+
+    if (oldPasswordCheck && newPasswordCheck)
     {
-        const userId = parseInt(req.user.id);
-        const oldPassword = req.body.oldPassword.toString();
-        const newPassword = req.body.newPassword.toString();
-
-        // check if oldPassword is same as in db
-        const oldPasswordInDb = await Users.query()
-                                            .select('password')
-                                            .where('id', '=', userId);
-
-        const oldPasswordToCompare = oldPasswordInDb.toString();
-        
-        if (oldPassword == oldPasswordToCompare)
+        // change password only and return
+        try
         {
-            // validate new password against password validation checks
-            const passwordValidationCheck = validatePassword( {pwd: newPassword} ); 
+            const oldPassword = req.body.oldPassword.toString();
+            const newPassword = req.body.newPassword.toString();
 
-            if (passwordValidationCheck.error == null)
+            // check if oldPassword is same as in db
+            const oldPasswordInDb = await Users.query()
+                                                .select('password')
+                                                .where('id', '=', userId);
+
+            const oldPasswordToCompare = oldPasswordInDb.toString();
+            
+            if (oldPassword == oldPasswordToCompare)
             {
-                // update the old password with new one in db
-                const updatedUser = await Users.query()
-                                                    .patch({ password: newPassword })
-                                                    .where('id', '=', userId);
+                // validate new password against password validation checks
+                const passwordValidationCheck = validatePassword( {pwd: newPassword} ); 
 
-                return res.status(200).send('Password changed sucessfully');
+                if (passwordValidationCheck.error == null)
+                {
+                    // update the old password with new one in db
+                    const updatedUser = await Users.query()
+                                                        .patch({ password: newPassword })
+                                                        .where('id', '=', userId);
+
+                    return res.status(200).send('Password changed sucessfully');
+                }
+                else
+                {
+                    return res.status(400).send(`Invalid new password. ${passwordValidationCheck.error}`);
+                }
             }
             else
             {
-                return res.status(400).send(`Invalid new password. ${passwordValidationCheck.error}`);
+                return res.status(400).send('Invalid old password');
             }
-        }
-        else
+        } 
+        catch (err)
         {
-            return res.status(400).send('Invalid old password');
+            console.log(err);   // remove this print
+            return res.status(400).send('Some error occured');
+        }
+    }
+
+    if (newEmailCheck)
+    {
+        // change email only and return
+        try
+        {
+            const newEmail = req.body.newEmail.toString();
+
+            // verify if this is a valid email address or not
+            const emailValidationCheck = validateEmail( {newEmail: newEmail} ); 
+
+            if (emailValidationCheck.error == null)
+            {
+                // update the email
+                const updatedUser = await Users.query()
+                                                .patch({ email: newEmail })
+                                                .where('id', '=', userId);
+
+                return res.status(200).send('Email changed sucessfully');
+            }
+            else
+            {
+                return res.status(400).send(`Invalid new email. ${emailValidationCheck.error}`);
+            } 
+        } 
+        catch (err)
+        {
+            console.log(err);   // remove this print
+            return res.status(400).send('Some error occured');
+        }
+    }
+
+    if (newPhoneNumberCheck)
+    {
+        // change phone_number only and return
+        try
+        {
+            const newPhoneNumber = parseInt(req.body.newPhoneNumber);
+
+            // verify if this is a valid email address or not
+            const phoneNumberValidationCheck = validatePhoneNumber( {newPhoneNumber: newPhoneNumber} ); 
+
+            if (phoneNumberValidationCheck.error == null)
+            {
+                // update the email
+                const updatedUser = await Users.query()
+                                                    .patch({ phone_number: newPhoneNumber })
+                                                    .where('id', '=', userId);
+
+                return res.status(200).send('Phone number changed sucessfully');
+            }
+            else
+            {
+                return res.status(400).send(`Invalid new phone number. ${phoneNumberValidationCheck.error}`);
+            } 
+        } 
+        catch (err)
+        {
+            console.log(err);   // remove this print
+            return res.status(400).send('Some error occured');
         }
     } 
-    catch (err)
-    {
-        console.log(err);   // remove this print
-        return res.status(400).send('Some error occured');
-    }
 });
 
 router.post('/login', async(req, res) => {

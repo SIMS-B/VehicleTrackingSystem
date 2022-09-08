@@ -119,7 +119,29 @@ function validatePassword(pwd) {
     return result;
 }
 
+function validateEmail(newEmail) {
+    
+    const schema = Joi.object({
+        newEmail: Joi.string().email()
+    });
+
+    const result = Joi.validate(newEmail, schema);
+    return result;
+}
+
+function validatePhoneNumber(newPhoneNumber) {
+    
+    const schema = Joi.object({
+        newPhoneNumber: Joi.number().integer()
+    });
+
+    const result = Joi.validate(newPhoneNumber, schema);
+    return result;
+}
+
 exports.Users = Users;
-exports.validatePassword = validatePassword;  
+exports.validatePassword = validatePassword;
+exports.validatePhoneNumber = validatePhoneNumber;
+exports.validateEmail = validateEmail;  
 exports.validateUser = validateUser;
 exports.validateAdmin = validateAdmin;
