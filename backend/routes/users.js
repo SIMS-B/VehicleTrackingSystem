@@ -29,7 +29,7 @@ const inputValid = async (creds) => {
         check = validateUser(creds);
         if(check.error!=null){
             return false;
-        } 
+        }
         else {
             validateQuery = await Users.query().findOne('cnic', '=', creds.cnic);
             if(validateQuery == null) return false;
@@ -144,6 +144,27 @@ router.post('/login', async(req, res) => {
         
     }
     catch (err)
+    {
+        console.log(err);
+    }
+});
+
+router.post('/verify', async(req, res) => {
+    try
+    {
+        const creds = req.body;
+        const validation = await inputValid(creds);
+        if(!validation) res.status(400).send("Some error occurred");
+        else {
+            if(validation.is_verified) res.send("Your account is already verified");
+            else 
+            {
+                const verifyUser = await Users.query().patch({is_verified: true}).where('id', '=', validation.id);
+                res.status(200).send("Your account is now verified.")
+            }
+        }
+    }
+    catch(err)
     {
         console.log(err);
     }
