@@ -7,7 +7,7 @@ class Orders extends Model {
     }
 
     static get orderIdColumn() {
-        return 'order_id';
+        return 'id';
     }
 
     static get userIdColumn() {
@@ -47,9 +47,9 @@ class Orders extends Model {
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['order_id', 'user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
+            required: ['id', 'user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
             properties: {
-                order_id: { type: 'integer' },
+                id: { type: 'integer' },
                 user_id:  { type: 'integer' },
                 cnic: { type: 'integer' },
                 vehicle_name: { type: 'string' },

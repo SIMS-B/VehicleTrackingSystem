@@ -19,7 +19,7 @@ class Configurations extends Model {
     }
 
     static get chasisColumn() {
-        return 'chasis';
+        return 'chassis';
     }
 
     static get readyToShipColumn() {
@@ -30,19 +30,24 @@ class Configurations extends Model {
         return 'arrival_at_vendor';
     }
 
+    static get idColumn() {
+        return 'id';
+    }
+
 
     // table's schema
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['po_reception', 'factory_floor', 'vin', 'chasis', 'ready_to_ship', 'arrival_at_vendor'],
+            required: ['po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor', 'id'],
             properties: {
                 po_reception: { type: 'integer' },
                 factory_floor: { type: 'integer' },
                 vin: { type: 'integer' },
-                chasis: { type: 'integer' },
+                chassis: { type: 'integer' },
                 ready_to_ship: { type: 'integer' },
-                arrival_at_vendor: { type: 'integer' }
+                arrival_at_vendor: { type: 'integer' },
+                id: { type: 'integer' }
             }
         };
     }

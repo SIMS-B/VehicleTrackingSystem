@@ -47,7 +47,7 @@ router.get('/', auth, async (req, res) => {
             // return all orders for admin filtered on provided filters
             if (isAdmin)
             {
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['order_id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
+                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
                 const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
                 const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
                 const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 
@@ -82,7 +82,7 @@ router.get('/', auth, async (req, res) => {
             else
             {
                 // return all orders of customer by filtering on ID and all the provided filters
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['order_id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
+                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
                 const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
                 const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
                 const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 

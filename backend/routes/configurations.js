@@ -3,10 +3,13 @@ const router = express.Router();
 
 const { Configurations } = require('../models/configurations');   // importing model for this route
 
+// importing middleware
+const auth = require('../middleware/auth');
+
 // db connection test script 
 const reading = async () => {
-    const fetchAll = await Configurations.query(); 
-    console.log(fetchAll);
+    const fetchAll = await Configurations.query();
+    return fetchAll;
 }
 
 // ROUTES
@@ -14,8 +17,7 @@ const reading = async () => {
 router.get('/', async (req, res) => {
     try
     {
-        console.log('sample configurations call');
-        await reading(); // db connection test function
+        
     } 
     catch (err)
     {
