@@ -1,5 +1,4 @@
 const { Model } = require('objection');
-const Joi = require('joi');
 const orders = require('./orders');    // importing order class to define relation
 
 // importing libraries
@@ -91,6 +90,25 @@ class Users extends Model {
 
 // VALIDATION FUNCTIONS
 
+const validateAdmin = (creds) => {
+    const schema = Joi.object({
+        email: Joi.string().email().required(),
+        password: Joi.string().min(5).max(20).required()
+    })  
+    const result= Joi.validate(creds, schema);
+    return result
+  }
+  
+const validateUser = (creds) => {
+  
+    const schema = Joi.object({
+        cnic: Joi.number().required(),
+        password: Joi.string().min(5).max(20).required()
+    }) 
+    const result= Joi.validate(creds, schema);
+    return result
+  }
+
 function validatePassword(pwd) {
     
     const schema = Joi.object({
@@ -102,4 +120,6 @@ function validatePassword(pwd) {
 }
 
 exports.Users = Users;
-exports.validatePassword = validatePassword;
+exports.validatePassword = validatePassword;  
+exports.validateUser = validateUser;
+exports.validateAdmin = validateAdmin;

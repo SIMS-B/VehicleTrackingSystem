@@ -1,13 +1,11 @@
 const express = require("express");
 const router = express.Router();
-
 const jwt = require("jsonwebtoken");
-const Joi = require('joi');
 
 
 
 // importing model for this route
-const { Users, validatePassword } = require('../models/users');  
+const { Users, validatePassword, validateAdmin, validateUser } = require('../models/users');  
 
 // importing middleware
 const auth = require('../middleware/auth');
@@ -25,55 +23,40 @@ const generateJwt = async (query) => {
 
 const inputValid = async (creds) => {
    
-    let check, validateQuery, query;
-
+    let check, validateQuery;
     if(creds.email == undefined)
     {
-        check = await validateUser(creds);
-        if(check.error) return false;
+        check = validateUser(creds);
+        if(check.error!=null){
+            return false;
+        } 
         else {
-            validateQuery = await users.query().findOne('cnic', '=', creds.cnic);
+            validateQuery = await Users.query().findOne('cnic', '=', creds.cnic);
+            if(validateQuery == null) return false;
         }
     }
     else if(creds.email != undefined)
     {
-        check = await validateAdmin(creds);
-        if(check.error) return false;
+        check = validateAdmin(creds);
+        if(check.error!=null) {
+            return false;
+        }
         else {
-            validateQuery = await users.query().findOne('email', '=', creds.email); 
-
-        }}
-    return await dbValid(check, validateQuery);
+            validateQuery = await Users.query().findOne('email', '=', creds.email); 
+            if(validateQuery == null) return false;
+        }} 
+    return dbValid(creds, validateQuery);
     }
 
 // validation from database
 
-const dbValid = async (creds, validateQuery) => {
-
-        if(creds.password == validateQuery.password) return validateQuery;
+const dbValid = (creds, validateQuery) => {
+        if(creds.password == validateQuery.password){
+           return validateQuery;
+        }
         else return false;
 
 }
-
-// joi validate
-
-const validateAdmin = async (creds) => {
-    const schema = Joi.object({
-        email: Joi.string().email().required(),
-        password: Joi.string().min(5).max(20)
-    })  
-    return await Joi.validate(creds, schema);
-  }
-  
-const validateUser = async (creds) => {
-  
-    const schema = Joi.object({
-        cnic: Joi.number().required(),
-        password: Joi.string().min(5).max(20)
-    }) 
-  
-    return await Joi.validate(creds, schema);
-  }
 
 // ROUTES
 
@@ -151,9 +134,13 @@ router.post('/login', async(req, res) => {
     try{
         const logCreds = req.body;
         const result = await inputValid(logCreds);
+        if(!result){
+            return res.status(400).send("Invalid Input");
+        }
+        console.log("result :", result)
         token = await generateJwt(result)
-        if(!token) res.send(400);
-        else res.status(200).send(token);
+        if(!token) return res.send(400);
+        else return res.status(200).send(token);
         
     }
     catch (err)
