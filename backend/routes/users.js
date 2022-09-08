@@ -1,11 +1,79 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+
+const jwt = require("jsonwebtoken");
+const Joi = require('joi');
+
+
 
 // importing model for this route
 const { Users, validatePassword } = require('../models/users');  
 
 // importing middleware
 const auth = require('../middleware/auth');
+
+// generate Jwt
+
+const generateJwt = async (query) => {
+    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, 'jwtPrivateKey');
+    if(query.is_admin) console.log("Admin logged in.");
+    else console.log("User logged in.");
+    return token;
+}
+
+// LOGIN function
+
+const inputValid = async (creds) => {
+   
+    let check, validateQuery, query;
+
+    if(creds.email == undefined)
+    {
+        check = await validateUser(creds);
+        if(check.error) return false;
+        else {
+            validateQuery = await users.query().findOne('cnic', '=', creds.cnic);
+        }
+    }
+    else if(creds.email != undefined)
+    {
+        check = await validateAdmin(creds);
+        if(check.error) return false;
+        else {
+            validateQuery = await users.query().findOne('email', '=', creds.email); 
+
+        }}
+    return await dbValid(check, validateQuery);
+    }
+
+// validation from database
+
+const dbValid = async (creds, validateQuery) => {
+
+        if(creds.password == validateQuery.password) return validateQuery;
+        else return false;
+
+}
+
+// joi validate
+
+const validateAdmin = async (creds) => {
+    const schema = Joi.object({
+        email: Joi.string().email().required(),
+        password: Joi.string().min(5).max(20)
+    })  
+    return await Joi.validate(creds, schema);
+  }
+  
+const validateUser = async (creds) => {
+  
+    const schema = Joi.object({
+        cnic: Joi.number().required(),
+        password: Joi.string().min(5).max(20)
+    }) 
+  
+    return await Joi.validate(creds, schema);
+  }
 
 // ROUTES
 
@@ -76,6 +144,21 @@ router.put('/', auth, async (req, res) => {
     {
         console.log(err);   // remove this print
         return res.status(400).send('Some error occured');
+    }
+});
+
+router.post('/login', async(req, res) => {
+    try{
+        const logCreds = req.body;
+        const result = await inputValid(logCreds);
+        token = await generateJwt(result)
+        if(!token) res.send(400);
+        else res.status(200).send(token);
+        
+    }
+    catch (err)
+    {
+        console.log(err);
     }
 });
 

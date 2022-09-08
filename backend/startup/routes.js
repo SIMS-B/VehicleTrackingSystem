@@ -12,3 +12,4 @@ module.exports = function(app) {
   app.use('/api/orders', orders);
   app.use('/api/configurations', configurations);
 };
+

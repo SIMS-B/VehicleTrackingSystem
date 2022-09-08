@@ -1,5 +1,5 @@
 const { Model } = require('objection');
-
+const Joi = require('joi');
 const orders = require('./orders');    // importing order class to define relation
 
 // importing libraries
@@ -102,4 +102,4 @@ function validatePassword(pwd) {
 }
 
 exports.Users = Users;
-exports.validatePassword = validatePassword;  
+exports.validatePassword = validatePassword;
