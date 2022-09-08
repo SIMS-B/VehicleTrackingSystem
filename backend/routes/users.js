@@ -54,7 +54,7 @@ const inputValid = async (creds) => {
 // validation from database
 
 const dbValid = async (creds, validateQuery) => {
-    
+
         if(creds.password == validateQuery.password) return validateQuery;
         else return false;
 
@@ -65,7 +65,7 @@ const dbValid = async (creds, validateQuery) => {
 const validateAdmin = async (creds) => {
     const schema = Joi.object({
         email: Joi.string().email().required(),
-        password: Joi.string().required()
+        password: Joi.string().min(5).max(20)
     })  
     return await Joi.validate(creds, schema);
   }
@@ -74,7 +74,7 @@ const validateUser = async (creds) => {
   
     const schema = Joi.object({
         cnic: Joi.number().required(),
-        password: Joi.string().required()
+        password: Joi.string().min(5).max(20)
     }) 
   
     return await Joi.validate(creds, schema);
@@ -100,8 +100,10 @@ router.post('/login', async(req, res) => {
     try{
         const logCreds = req.body;
         const result = await inputValid(logCreds);
-        if(!result) res.send(400);
-        else res.header('x-auth-token', await generateJwt(result)).send(200);
+        token = await generateJwt(result)
+        if(!token) res.send(400);
+        else res.status(200).send(token);
+        
     }
     catch (err)
     {
