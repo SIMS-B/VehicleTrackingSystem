@@ -47,26 +47,11 @@ router.get('/', auth, async (req, res) => {
             // return all orders for admin filtered on provided filters
             if (isAdmin)
             {
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
-                const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
-                const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
-                const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 
-                const vehicleColorCondition = queryParams.hasOwnProperty('vehicleColor') ? ['vehicle_color', '=', queryParams.vehicleColor.toString()] : [1, '=', 1]; 
-                const statusCondition = queryParams.hasOwnProperty('status') ? ['status', '=', queryParams.status.toString()] : [1, '=', 1]; 
-                const startingDateCondition = queryParams.hasOwnProperty('startingDate') ? ['starting_date', '=', queryParams.startingDate.toString()] : [1, '=', 1]; 
-                const endingDateCondition = queryParams.hasOwnProperty('endingDate') ? ['ending_date', '=', queryParams.endingDate.toString()] : [1, '=', 1];
-                const userIdCondition = queryParams.hasOwnProperty('userID') ? ['user_id', '=', queryParams.userID.toString()] : [1, '=', 1]; 
-
-                const allOrders = await Orders.query()
-                                                    .where(orderIdCondition[0], orderIdCondition[1], orderIdCondition[2])
-                                                    .where(cnicCondition[0], cnicCondition[1], cnicCondition[2])
-                                                    .where(vehicleNameCondition[0], vehicleNameCondition[1], vehicleNameCondition[2])
-                                                    .where(vehicleModelCondition[0], vehicleModelCondition[1], vehicleModelCondition[2])
-                                                    .where(vehicleColorCondition[0], vehicleColorCondition[1], vehicleColorCondition[2])
-                                                    .where(statusCondition[0], statusCondition[1], statusCondition[2])
-                                                    .where(startingDateCondition[0], startingDateCondition[1], startingDateCondition[2])
-                                                    .where(endingDateCondition[0], endingDateCondition[1], endingDateCondition[2])
-                                                    .where(userIdCondition[0], userIdCondition[1], userIdCondition[2]);
+                const allOrders = await Orders.query().modify((QueryBuilder) => {
+                    Object.keys(queryParams).map((key) => {
+                        QueryBuilder.where(key, queryParams[key]);
+                    });
+                });
 
                 // if empty then filter matches no result(s)
                 if (allOrders.length == 0)
@@ -81,26 +66,12 @@ router.get('/', auth, async (req, res) => {
             }
             else
             {
-                // return all orders of customer by filtering on ID and all the provided filters
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
-                const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
-                const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
-                const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 
-                const vehicleColorCondition = queryParams.hasOwnProperty('vehicleColor') ? ['vehicle_color', '=', queryParams.vehicleColor.toString()] : [1, '=', 1]; 
-                const statusCondition = queryParams.hasOwnProperty('status') ? ['status', '=', queryParams.status.toString()] : [1, '=', 1]; 
-                const startingDateCondition = queryParams.hasOwnProperty('startingDate') ? ['starting_date', '=', queryParams.startingDate.toString()] : [1, '=', 1]; 
-                const endingDateCondition = queryParams.hasOwnProperty('endingDate') ? ['ending_date', '=', queryParams.endingDate.toString()] : [1, '=', 1];
-
-                const allOrders = await Orders.query()
-                                                    .where(orderIdCondition[0], orderIdCondition[1], orderIdCondition[2])
-                                                    .where(cnicCondition[0], cnicCondition[1], cnicCondition[2])
-                                                    .where(vehicleNameCondition[0], vehicleNameCondition[1], vehicleNameCondition[2])
-                                                    .where(vehicleModelCondition[0], vehicleModelCondition[1], vehicleModelCondition[2])
-                                                    .where(vehicleColorCondition[0], vehicleColorCondition[1], vehicleColorCondition[2])
-                                                    .where(statusCondition[0], statusCondition[1], statusCondition[2])
-                                                    .where(startingDateCondition[0], startingDateCondition[1], startingDateCondition[2])
-                                                    .where(endingDateCondition[0], endingDateCondition[1], endingDateCondition[2])
-                                                    .where('id', '=', userId);
+                const allOrders = await Orders.query().modify((QueryBuilder) => {
+                    Object.keys(queryParams).map((key) => {
+                        QueryBuilder.where(key, queryParams[key]);
+                    });
+                    QueryBuilder.where('id','=',userId);
+                });
 
                 // if empty then filter matches no result(s)
                 if (allOrders.length == 0)
