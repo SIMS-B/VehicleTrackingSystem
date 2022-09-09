@@ -129,8 +129,6 @@ router.get('/', auth, async (req, res) => {
         const isAdmin = req.user.is_admin;
         if(isAdmin)
         {
-            if(isAdmin)
-        {
             const orderList = req.body.array;
             const currentStatus = req.body.current_status
             const newStatus = req.body.new_status;
@@ -147,7 +145,6 @@ router.get('/', auth, async (req, res) => {
                     res.status(200).send("Successfully Updated Status!");
                 }
             }            
-        }
         }
         else
         {
