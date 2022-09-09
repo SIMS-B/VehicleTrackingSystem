@@ -133,7 +133,7 @@ router.put('/', auth, async(req, res) => {
         {
             const orderList = req.body.array;
             const newEndingDate = req.body.date;
-            if(!orderList) res.status(400).send("No orders selected!");
+            if(orderList.length === 0) res.status(400).send("No orders selected!");
             else
             {
                 if(!newEndingDate) res.status(400).send("No date given!");
