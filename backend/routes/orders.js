@@ -8,6 +8,7 @@ const auth = require('../middleware/auth');
 
 // importing libraries
 const knex = require('knex');
+const { route } = require('./users');
 
 // ROUTES
 
@@ -121,5 +122,41 @@ router.get('/', auth, async (req, res) => {
         return res.status(400).send('Some error occured');
     }
 });
+
+ // Update Delivery Date
+
+router.put('/', auth, async(req, res) => {
+    try
+    {
+        const isAdmin = req.user.is_admin;
+        if(isAdmin)
+        {
+            const orderList = req.body.array;
+            const newEndingDate = req.body.date;
+            if(!orderList) res.status(400).send("No orders selected!");
+            else
+            {
+                if(!newEndingDate) res.status(400).send("No date given!");
+                else
+                {
+                    for(let i = 0; i<orderList.length;i++)
+                    {
+                    const updatedOrders = await Orders.query().patch({delivery_date: newEndingDate}).where('id', '=', orderList[i].id)
+                    }
+                    res.status(200).send("Successfully Updated Delivery Date!");
+                }
+            }            
+        }
+        else
+        {
+            res.status(403).send("You cannot access this page.")
+        }
+    }
+    catch(err)
+    {
+        console.log(err);
+    }
+});
+
 
 module.exports = router;
