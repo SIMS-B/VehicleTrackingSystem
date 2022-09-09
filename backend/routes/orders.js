@@ -139,10 +139,10 @@ router.put('/', auth, async(req, res) => {
                 if(!newEndingDate) res.status(400).send("No date given!");
                 else
                 {
-                    for(let i = 0; i<orderList.length;i++)
-                    {
-                    const updatedOrders = await Orders.query().patch({delivery_date: newEndingDate}).where('id', '=', orderList[i].id)
-                    }
+                    const updatedOrders = orderList.map(async(key) => {
+                        console.log(key);
+                        await Orders.query().patch({delivery_date: newEndingDate}).where('id', '=', key.id)
+                    });
                     res.status(200).send("Successfully Updated Delivery Date!");
                 }
             }            
