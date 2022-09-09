@@ -33,9 +33,23 @@ router.get('/', auth, async (req, res) => {
             else
             {
                 // return all orders of customer by filtering on ID
-
+                
                 const allOrdersOfCustomer = await Orders.query()
-                                                            .where('id', '=', userId);
+                                                            .where('user_id', '=', userId);
+
+                // calculate ETA of each order
+                allOrdersOfCustomer.map((order) => {
+
+                    const startingDate = order.starting_date;
+                    const deliveryDate = order.delivery_date;
+
+                    const secStartingDate = Date.parse(startingDate);
+                    const secDeliveryDate = Date.parse(deliveryDate);
+                    const secDifference = parseInt(secDeliveryDate) - parseInt(secStartingDate);
+                    const dayDifference = Math.floor(secDifference / 86400000);
+
+                    order.eta = dayDifference;
+                });
 
                 return res.status(200).send(`All customer's orders fetched ${JSON.stringify(allOrdersOfCustomer)}`);
             }
@@ -70,7 +84,7 @@ router.get('/', auth, async (req, res) => {
                     Object.keys(queryParams).map((key) => {
                         QueryBuilder.where(key, queryParams[key]);
                     });
-                    QueryBuilder.where('id','=',userId);
+                    QueryBuilder.where('user_id','=',userId);
                 });
 
                 // if empty then filter matches no result(s)
