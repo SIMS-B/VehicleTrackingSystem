@@ -122,4 +122,42 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+ // update status of ongoing orders
+
+ router.put('/status', auth, (req, res) => {
+    try{
+        const isAdmin = req.user.is_admin;
+        if(isAdmin)
+        {
+            if(isAdmin)
+        {
+            const orderList = req.body.array;
+            const currentStatus = req.body.current_status
+            const newStatus = req.body.new_status;
+            if(!orderList) res.status(400).send("No orders selected!");
+            else
+            {
+                if(!newStatus) res.status(400).send("No status given!");
+                else
+                {
+                    const updatedOrders = orderList.map(async(key) => {
+                        console.log(key);
+                        await Orders.query().patch({status: newStatus}).where('id', '=', key.id)
+                    });
+                    res.status(200).send("Successfully Updated Status!");
+                }
+            }            
+        }
+        }
+        else
+        {
+            res.status(403).send("You cannot access this page.");
+        }
+    }
+    catch(err)
+    {
+        console.log(err);
+    }
+});
+
 module.exports = router;
