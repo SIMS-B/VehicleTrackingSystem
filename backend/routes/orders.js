@@ -132,18 +132,27 @@ router.put('/', auth, async(req, res) => {
         if(isAdmin)
         {
             const orderList = req.body.array;
-            const newEndingDate = req.body.date;
+            const startingDate = Date.parse(req.body.start_date);
+            const newDate = req.body.new_date
+            const newEndingDate = Date.parse(newDate);
             if(orderList.length === 0) res.status(400).send("No orders selected!");
             else
             {
-                if(!newEndingDate) res.status(400).send("No date given!");
+                if(!newDate) res.status(400).send("No date given!");
                 else
                 {
+                    if(newEndingDate > startingDate)
+                    {
                     const updatedOrders = orderList.map(async(key) => {
                         console.log(key);
-                        await Orders.query().patch({delivery_date: newEndingDate}).where('id', '=', key.id)
+                        await Orders.query().patch({delivery_date: newDate}).where('id', '=', key.id)
                     });
                     res.status(200).send("Successfully Updated Delivery Date!");
+                    }
+                    else
+                    {
+                        res.status(400).send("Enter a Valid Ending Date!");
+                    }
                 }
             }            
         }
