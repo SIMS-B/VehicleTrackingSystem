@@ -132,7 +132,7 @@ router.get('/', auth, async (req, res) => {
             const orderList = req.body.array;
             const currentStatus = req.body.current_status
             const newStatus = req.body.new_status;
-            if(!orderList) res.status(400).send("No orders selected!");
+            if(orderList.length === 0) res.status(400).send("No orders selected!");
             else
             {
                 if(!newStatus) res.status(400).send("No status given!");
