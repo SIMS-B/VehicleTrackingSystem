@@ -1,5 +1,5 @@
 const { Model } = require('objection');
-const orders = require('./orders');    // importing order class to define relation
+const { Orders } = require('./orders');    // importing order class to define relation
 
 // importing libraries
 const Joi = require('joi');
@@ -57,7 +57,7 @@ class Users extends Model {
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['id', 'cnic', 'first_name', 'last_name', 'email', 'phone_number', 'password', 'registration_date'],
+            required: ['cnic', 'first_name', 'last_name', 'email', 'phone_number', 'password', 'registration_date'],
             properties: {
                 id:  { type: 'integer' },
                 cnic: { type: 'integer' },
@@ -78,7 +78,7 @@ class Users extends Model {
         return {
             Order: {
                 relation: Model.HasManyRelation,
-                modelClass: orders,
+                modelClass: Orders,
                 join: {
                     from: 'users.id',
                     to: 'orders.user_id'
@@ -119,7 +119,29 @@ function validatePassword(pwd) {
     return result;
 }
 
+function validateEmail(newEmail) {
+    
+    const schema = Joi.object({
+        newEmail: Joi.string().email()
+    });
+
+    const result = Joi.validate(newEmail, schema);
+    return result;
+}
+
+function validatePhoneNumber(newPhoneNumber) {
+    
+    const schema = Joi.object({
+        newPhoneNumber: Joi.number().integer()
+    });
+
+    const result = Joi.validate(newPhoneNumber, schema);
+    return result;
+}
+
 exports.Users = Users;
-exports.validatePassword = validatePassword;  
+exports.validatePassword = validatePassword;
+exports.validatePhoneNumber = validatePhoneNumber;
+exports.validateEmail = validateEmail;  
 exports.validateUser = validateUser;
 exports.validateAdmin = validateAdmin;
