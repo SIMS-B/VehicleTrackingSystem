@@ -1,5 +1,5 @@
 const { Model } = require('objection');
-const orders = require('./orders');    // importing order class to define relation
+const { Orders } = require('./orders');    // importing order class to define relation
 
 // importing libraries
 const Joi = require('joi');
@@ -57,7 +57,7 @@ class Users extends Model {
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['id', 'cnic', 'first_name', 'last_name', 'email', 'phone_number', 'password', 'registration_date'],
+            required: ['cnic', 'first_name', 'last_name', 'email', 'phone_number', 'password', 'registration_date'],
             properties: {
                 id:  { type: 'integer' },
                 cnic: { type: 'integer' },
@@ -78,7 +78,7 @@ class Users extends Model {
         return {
             Order: {
                 relation: Model.HasManyRelation,
-                modelClass: orders,
+                modelClass: Orders,
                 join: {
                     from: 'users.id',
                     to: 'orders.user_id'

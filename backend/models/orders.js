@@ -42,12 +42,15 @@ class Orders extends Model {
         return 'delivery_date';
     }
 
+    static get configColumn() {
+        return 'config';
+    }
 
     // table's schema
     static get jsonSchema() {
         return {
             type: 'object',
-            required: ['id', 'user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
+            required: ['user_id', 'cnic', 'vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date'],
             properties: {
                 id: { type: 'integer' },
                 user_id:  { type: 'integer' },
@@ -57,7 +60,8 @@ class Orders extends Model {
                 vehicle_color: { type: 'string' },
                 status: { type: 'string' },
                 starting_date: { type: 'string' },
-                delivery_date: { type: 'string' }
+                delivery_date: { type: 'string' },
+                config: { type: 'object' }
             }
         };
     }
