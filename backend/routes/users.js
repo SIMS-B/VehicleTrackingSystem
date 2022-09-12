@@ -131,7 +131,9 @@ router.put('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
 
     // fetch all configurations
-    const configurationQuery = await Configurations.query();
+    const configurationQuery = await Configurations.query()
+                                                    .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor');
+
     const configurationSum = parseInt(configurationQuery[0].po_reception) + parseInt(configurationQuery[0].factory_floor) + parseInt(configurationQuery[0].vin) + parseInt(configurationQuery[0].chassis) + parseInt(configurationQuery[0].ready_to_ship) + parseInt(configurationQuery[0].arrival_at_vendor);
 
     // check if user with cnic exists or not
