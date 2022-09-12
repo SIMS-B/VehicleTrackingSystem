@@ -122,4 +122,57 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+router.get('/status', auth, async(req, res) => {
+    try
+    {
+        let showOrders=[];
+        const isAdmin = req.user.is_admin;
+    if(isAdmin)
+    {
+        const allOrders = await Orders.query();
+        allOrders.map(async(key) => {
+            const configArray = Object.values(key.config);
+            const sumOfConfigs = configArray.reduce((a,b)=>a+b, 0);
+            const endingDate = Date.parse(key.delivery_date);
+            const startingDate = Date.parse(key.starting_date);
+            const totalDays = endingDate - startingDate;
+            const currentDays = Date.now() - startingDate;
+
+            //if structure
+
+            if(key.status == 'po_reception') {
+                const days = (configArray[0]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+            else if(key.status == 'factory_floor') {
+                const days = (configArray[1]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+            else if(key.status == 'vin') {
+                const days = (configArray[2]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+            else if(key.status == 'chassis') {
+                const days = (configArray[3]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+            else if(key.status == 'ready_to_ship') {
+                const days = (configArray[4]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+            else if(key.status == 'arrived_at_vendor') {
+                const days = (configArray[5]/sumOfConfigs)*totalDays
+                if(currentDays >= days) showOrders.push(key);
+            }
+        })
+        return res.status(200).send(showOrders);
+    }
+    else return res.status(403).send("You cannot access this page!");   
+    }
+    catch(err)
+    {
+        console.log(err);
+    }
+});
+
 module.exports = router;
