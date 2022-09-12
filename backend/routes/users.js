@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 
+// importing app configurations
+const config = require('config');
+
 // importing model for this route
 const { Users, validatePassword, validateAdmin, validateUser, validatePhoneNumber, validateEmail } = require('../models/users');   
 const { Configurations } = require('../models/configurations');
@@ -12,7 +15,7 @@ const auth = require('../middleware/auth');
 // generate Jwt
 
 const generateJwt = async (query) => {
-    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, 'jwtPrivateKey');
+    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, config.get('jwt'));
     if(query.is_admin) console.log("Admin logged in.");
     else console.log("User logged in.");
     return token;
