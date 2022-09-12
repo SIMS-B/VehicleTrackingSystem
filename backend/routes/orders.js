@@ -8,6 +8,7 @@ const auth = require('../middleware/auth');
 
 // importing libraries
 const knex = require('knex');
+const { route } = require('./users');
 
 // ROUTES
 
@@ -33,9 +34,23 @@ router.get('/', auth, async (req, res) => {
             else
             {
                 // return all orders of customer by filtering on ID
-
+                
                 const allOrdersOfCustomer = await Orders.query()
-                                                            .where('id', '=', userId);
+                                                            .where('user_id', '=', userId);
+
+                // calculate ETA of each order
+                allOrdersOfCustomer.map((order) => {
+
+                    const startingDate = order.starting_date;
+                    const deliveryDate = order.delivery_date;
+
+                    const secStartingDate = Date.parse(startingDate);
+                    const secDeliveryDate = Date.parse(deliveryDate);
+                    const secDifference = parseInt(secDeliveryDate) - parseInt(secStartingDate);
+                    const dayDifference = Math.floor(secDifference / 86400000);
+
+                    order.eta = dayDifference;
+                });
 
                 return res.status(200).send(`All customer's orders fetched ${JSON.stringify(allOrdersOfCustomer)}`);
             }
@@ -47,26 +62,11 @@ router.get('/', auth, async (req, res) => {
             // return all orders for admin filtered on provided filters
             if (isAdmin)
             {
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
-                const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
-                const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
-                const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 
-                const vehicleColorCondition = queryParams.hasOwnProperty('vehicleColor') ? ['vehicle_color', '=', queryParams.vehicleColor.toString()] : [1, '=', 1]; 
-                const statusCondition = queryParams.hasOwnProperty('status') ? ['status', '=', queryParams.status.toString()] : [1, '=', 1]; 
-                const startingDateCondition = queryParams.hasOwnProperty('startingDate') ? ['starting_date', '=', queryParams.startingDate.toString()] : [1, '=', 1]; 
-                const endingDateCondition = queryParams.hasOwnProperty('endingDate') ? ['ending_date', '=', queryParams.endingDate.toString()] : [1, '=', 1];
-                const userIdCondition = queryParams.hasOwnProperty('userID') ? ['user_id', '=', queryParams.userID.toString()] : [1, '=', 1]; 
-
-                const allOrders = await Orders.query()
-                                                    .where(orderIdCondition[0], orderIdCondition[1], orderIdCondition[2])
-                                                    .where(cnicCondition[0], cnicCondition[1], cnicCondition[2])
-                                                    .where(vehicleNameCondition[0], vehicleNameCondition[1], vehicleNameCondition[2])
-                                                    .where(vehicleModelCondition[0], vehicleModelCondition[1], vehicleModelCondition[2])
-                                                    .where(vehicleColorCondition[0], vehicleColorCondition[1], vehicleColorCondition[2])
-                                                    .where(statusCondition[0], statusCondition[1], statusCondition[2])
-                                                    .where(startingDateCondition[0], startingDateCondition[1], startingDateCondition[2])
-                                                    .where(endingDateCondition[0], endingDateCondition[1], endingDateCondition[2])
-                                                    .where(userIdCondition[0], userIdCondition[1], userIdCondition[2]);
+                const allOrders = await Orders.query().modify((QueryBuilder) => {
+                    Object.keys(queryParams).map((key) => {
+                        QueryBuilder.where(key, queryParams[key]);
+                    });
+                });
 
                 // if empty then filter matches no result(s)
                 if (allOrders.length == 0)
@@ -81,36 +81,37 @@ router.get('/', auth, async (req, res) => {
             }
             else
             {
-                // return all orders of customer by filtering on ID and all the provided filters
-                const orderIdCondition = queryParams.hasOwnProperty('orderID') ? ['id', '=', queryParams.orderID.toString()] : [1, '=', 1]; 
-                const cnicCondition = queryParams.hasOwnProperty('cnic') ? ['cnic', '=', queryParams.cnic.toString()] : [1, '=', 1]; 
-                const vehicleNameCondition = queryParams.hasOwnProperty('vehicleName') ? ['vehicle_name', '=', queryParams.vehicleName.toString()] : [1, '=', 1]; 
-                const vehicleModelCondition = queryParams.hasOwnProperty('vehicleModel') ? ['vehicle_model', '=', queryParams.vehicleModel.toString()] : [1, '=', 1]; 
-                const vehicleColorCondition = queryParams.hasOwnProperty('vehicleColor') ? ['vehicle_color', '=', queryParams.vehicleColor.toString()] : [1, '=', 1]; 
-                const statusCondition = queryParams.hasOwnProperty('status') ? ['status', '=', queryParams.status.toString()] : [1, '=', 1]; 
-                const startingDateCondition = queryParams.hasOwnProperty('startingDate') ? ['starting_date', '=', queryParams.startingDate.toString()] : [1, '=', 1]; 
-                const endingDateCondition = queryParams.hasOwnProperty('endingDate') ? ['ending_date', '=', queryParams.endingDate.toString()] : [1, '=', 1];
-
-                const allOrders = await Orders.query()
-                                                    .where(orderIdCondition[0], orderIdCondition[1], orderIdCondition[2])
-                                                    .where(cnicCondition[0], cnicCondition[1], cnicCondition[2])
-                                                    .where(vehicleNameCondition[0], vehicleNameCondition[1], vehicleNameCondition[2])
-                                                    .where(vehicleModelCondition[0], vehicleModelCondition[1], vehicleModelCondition[2])
-                                                    .where(vehicleColorCondition[0], vehicleColorCondition[1], vehicleColorCondition[2])
-                                                    .where(statusCondition[0], statusCondition[1], statusCondition[2])
-                                                    .where(startingDateCondition[0], startingDateCondition[1], startingDateCondition[2])
-                                                    .where(endingDateCondition[0], endingDateCondition[1], endingDateCondition[2])
-                                                    .where('id', '=', userId);
+                const allOrdersOfCustomer = await Orders.query().modify((QueryBuilder) => {
+                    Object.keys(queryParams).map((key) => {
+                        QueryBuilder.where(key, queryParams[key]);
+                    });
+                    QueryBuilder.where('user_id','=',userId);
+                });
 
                 // if empty then filter matches no result(s)
-                if (allOrders.length == 0)
+                if (allOrdersOfCustomer.length == 0)
                 {
                     return res.status(204).send('Filter(s) do not match any result');
                 }
                 else
                 {
-                    // otherwise return results
-                    return res.status(200).send(`All orders fetched ${JSON.stringify(allOrders)}`);
+                    // otherwise return results after adding their ETAs
+
+                    // calculate ETA of each order
+                    allOrdersOfCustomer.map((order) => {
+
+                        const startingDate = order.starting_date;
+                        const deliveryDate = order.delivery_date;
+
+                        const secStartingDate = Date.parse(startingDate);
+                        const secDeliveryDate = Date.parse(deliveryDate);
+                        const secDifference = parseInt(secDeliveryDate) - parseInt(secStartingDate);
+                        const dayDifference = Math.floor(secDifference / 86400000);
+
+                        order.eta = dayDifference;
+                    });
+
+                    return res.status(200).send(`All orders fetched ${JSON.stringify(allOrdersOfCustomer)}`);
                 }
             }
         }  
@@ -122,6 +123,7 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+//Show order notification for status change
 router.get('/status', auth, async(req, res) => {
     try
     {
@@ -167,7 +169,88 @@ router.get('/status', auth, async(req, res) => {
         })
         return res.status(200).send(showOrders);
     }
-    else return res.status(403).send("You cannot access this page!");   
+    else return res.status(403).send("You cannot access this page!"); 
+}
+catch(err)
+{
+    console.log(err);
+}  
+});
+
+
+ // Update Delivery Date
+router.put('/', auth, async(req, res) => {
+    try
+    {
+        const isAdmin = req.user.is_admin;
+        if(isAdmin)
+        {
+            const orderList = req.body.array;
+            const startingDate = Date.parse(req.body.start_date);
+            const newDate = req.body.new_date
+            const newEndingDate = Date.parse(newDate);
+            if(orderList.length === 0) res.status(400).send("No orders selected!");
+            else
+            {
+                if(!newDate) res.status(400).send("No date given!");
+                else
+                {
+                    if(newEndingDate > startingDate)
+                    {
+                        const updatedOrders = orderList.map(async(key) => {
+                            console.log(key);
+                            await Orders.query().patch({delivery_date: newDate}).where('id', '=', key.id)
+                        });
+                    
+                        res.status(200).send("Successfully Updated Delivery Date!");
+                    }
+                    else
+                    {
+                        res.status(400).send("Enter a Valid Ending Date!");
+                    }
+                }
+            }
+        }
+        else
+        {
+            res.status(403).send("You cannot access this page.")
+        }
+    }
+    catch (err)
+    {
+        console.log(err);
+
+    }
+});
+
+// update status of ongoing orders
+router.put('/status', auth, (req, res) => {
+    try{
+        const isAdmin = req.user.is_admin;
+        if(isAdmin)
+        {
+            const orderList = req.body.array;
+            const currentStatus = req.body.current_status
+            const newStatus = req.body.new_status;
+            if(orderList.length === 0) res.status(400).send("No orders selected!");
+            else
+            {
+                if(!newStatus) res.status(400).send("No status given!");
+                else
+                {
+                    const updatedOrders = orderList.map(async(key) => {
+                        console.log(key);
+                        await Orders.query().patch({status: newStatus}).where('id', '=', key.id)
+                    });
+                    res.status(200).send("Successfully Updated Status!");
+                }
+            }            
+        }
+        else
+        {
+
+            res.status(403).send("You cannot access this page.");
+        }
     }
     catch(err)
     {
