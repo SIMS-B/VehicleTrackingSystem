@@ -147,8 +147,7 @@ router.post('/', auth, async (req, res) => {
         // customer does not exist, create new customer and order
         try
         {
-            const currDate = new Date();
-            const offsetDate = currDate.setDate(currDate.getDate() + configurationSum);
+            const currDate = Date.now();
             const firstName = req.body.firstName.toString();
             const lastName = req.body.lastName.toString();
             const email = req.body.email.toString();    // validate email
@@ -163,9 +162,10 @@ router.post('/', auth, async (req, res) => {
             const vehicleColor = req.body.vehicleColor.toString();
             const status = 'po_reception'; // all new orders are set at po_reception stage
             const startingDate = registrationDate;
-            const deliveryDate = new Date(offsetDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+            const configInMillisec = configurationSum * 86400000;
+            const offsetDateInMillisec = currDate + configInMillisec;
+            const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
             const config = configurationQuery[0];
-            
 
             const insertQuery = await Users.query().insertGraph(
             {
@@ -209,10 +209,11 @@ router.post('/', auth, async (req, res) => {
             const vehicleColor = req.body.vehicleColor.toString();
             const status = 'po_reception'; // all new orders are set at po_reception stage
         
-            const currDate = new Date();
-            const offsetDate = currDate.setDate(currDate.getDate() + configurationSum);
-            const startingDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
-            const deliveryDate = new Date(offsetDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+            const currDate = Date.now();
+            const startingDate = new Date(currDate).toISOString().slice(0, 10).toString();
+            const configInMillisec = configurationSum * 86400000;
+            const offsetDateInMillisec = currDate + configInMillisec;
+            const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
             const config = configurationQuery[0];
 
             const customerId = parseInt(cnicCheck[0].id);
