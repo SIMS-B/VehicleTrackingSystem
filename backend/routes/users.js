@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 // importing model for this route
 const { Users, validatePassword, validateAdmin, validateUser, validatePhoneNumber, validateEmail } = require('../models/users');   
@@ -50,7 +51,7 @@ const inputValid = async (creds) => {
 // validation from database
 
 const dbValid = (creds, validateQuery) => {
-        if(creds.password == validateQuery.password){
+        if(bcrypt.compare(creds.password, validateQuery.password)){
            return validateQuery;
         }
         else return false;
@@ -109,16 +110,21 @@ router.put('/', auth, async (req, res) => {
 
             const oldPasswordToCompare = oldPasswordInDb.toString();
             
-            if (oldPassword == oldPasswordToCompare)
+            if (bcrypt.compare(oldPassword, oldPasswordToCompare))
             {
                 // validate new password against password validation checks
                 const passwordValidationCheck = validatePassword( {pwd: newPassword} ); 
 
                 if (passwordValidationCheck.error == null)
                 {
-                    // update the old password with new one in db
+                    // hashing new password
+
+                    const saltRounds = 2;
+                    const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
+
+                    // update the old password with new hashed one in db
                     const updatedUser = await Users.query()
-                                                        .patch({ password: newPassword })
+                                                        .patch({ password: hashedPassword })
                                                         .where('id', '=', userId);
 
                     return res.status(200).send('Password changed sucessfully');
@@ -232,6 +238,10 @@ router.post('/', auth, async (req, res) => {
             const isVerified = false;
             const isAdmin = false;
 
+            // bcrypt password hash
+            const saltRounds = 2;
+            const hashedPassword = await bcrypt.hash(password, saltRounds)
+
             const vehicleName = req.body.vehicleName.toString();
             const vehicleModel = req.body.vehicleModel.toString();
             const vehicleColor = req.body.vehicleColor.toString();
@@ -249,7 +259,7 @@ router.post('/', auth, async (req, res) => {
                 last_name: lastName, 
                 email: email,
                 phone_number: phoneNumber,
-                password: password,
+                password: hashedPassword,
                 registration_date: registrationDate,
                 is_verified: isVerified,
                 is_admin: isAdmin,
@@ -324,6 +334,10 @@ router.post('/login', async(req, res) => {
         const result = await inputValid(logCreds);
         if(!result){
             return res.status(400).send("Invalid Input");
+        }
+        if(!result.is_verified)
+        {
+            return res.status(400).send("Your account is not verified.")
         }
         console.log("result :", result)
         token = await generateJwt(result)
