@@ -62,7 +62,6 @@ const dbValid = (creds, validateQuery) => {
 router.get('/', auth, async (req, res) => {
     
     // req.user contains {is_admin, id}
-
     try
     {
         const userId = req.user.id.toString();
@@ -163,7 +162,8 @@ router.post('/', auth, async (req, res) => {
             const status = 'po_reception'; // all new orders are set at po_reception stage
             const startingDate = registrationDate;
             const deliveryDate = new Date(offsetDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
-
+            const config = configurationQuery[0];
+            
 
             const insertQuery = await Users.query().insertGraph(
             {
@@ -184,7 +184,8 @@ router.post('/', auth, async (req, res) => {
                     vehicle_color: vehicleColor,
                     status: status,
                     starting_date: startingDate,
-                    delivery_date: deliveryDate
+                    delivery_date: deliveryDate,
+                    config: config
                 }]
             })
         
@@ -210,6 +211,7 @@ router.post('/', auth, async (req, res) => {
             const offsetDate = currDate.setDate(currDate.getDate() + configurationSum);
             const startingDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
             const deliveryDate = new Date(offsetDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+            const config = configurationQuery[0];
 
             const customerId = parseInt(cnicCheck[0].id);
             const userId = parseInt(cnicCheck[0].id);
@@ -224,7 +226,8 @@ router.post('/', auth, async (req, res) => {
                                                 status: status,
                                                 starting_date: startingDate,
                                                 delivery_date: deliveryDate,
-                                                user_id: userId
+                                                user_id: userId,
+                                                config: config
                                             })
 
             return res.status(200).send('New order for existing customer created successfully');
@@ -248,7 +251,6 @@ router.post('/login', async(req, res) => {
         token = await generateJwt(result)
         if(!token) return res.send(400);
         else return res.status(200).send(token);
-        
     }
     catch (err)
     {
