@@ -42,6 +42,9 @@ class Orders extends Model {
         return 'delivery_date';
     }
 
+    static get configColumn() {
+        return 'config';
+    }
 
     // table's schema
     static get jsonSchema() {
@@ -57,7 +60,8 @@ class Orders extends Model {
                 vehicle_color: { type: 'string' },
                 status: { type: 'string' },
                 starting_date: { type: 'string' },
-                delivery_date: { type: 'string' }
+                delivery_date: { type: 'string' },
+                config: { type: 'object' }
             }
         };
     }
