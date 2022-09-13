@@ -13,5 +13,6 @@
         }
     },
     "port": 8080,
-    "jwt": "jwtPrivateKey"
+    "jwt": "jwtPrivateKey",
+    "saltRounds": 2
 }

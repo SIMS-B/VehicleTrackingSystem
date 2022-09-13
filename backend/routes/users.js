@@ -48,16 +48,10 @@ const inputValid = async (creds) => {
             validateQuery = await Users.query().findOne('email', '=', creds.email); 
             if(validateQuery == null) return false;
         }} 
-    return dbValid(creds, validateQuery);
-    }
-
-// validation from database
-
-const dbValid = async (creds, validateQuery) => {
-        if(await bcrypt.compare(creds.password, validateQuery.password)){
-           return validateQuery;
-        }
-        else return false;
+    if(await bcrypt.compare(creds.password, validateQuery.password)){
+        return validateQuery;
+     }
+     else return false;
 }
 
 // ROUTES
@@ -120,9 +114,7 @@ router.put('/', auth, async (req, res) => {
                 if (passwordValidationCheck.error == null)
                 {
                     // hashing new password
-
-                    const saltRounds = 2;
-                    const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
+                    const hashedPassword = await bcrypt.hash(newPassword, config.get('saltRounds'))
 
                     // update the old password with new hashed one in db
                     const updatedUser = await Users.query()
@@ -236,13 +228,13 @@ router.post('/', auth, async (req, res) => {
             const email = req.body.email.toString();    // validate email
             const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
             const password = Math.random().toString(36).slice(2, 10).toString();
+            console.log("Random Password: ", password)
             const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
             const isVerified = false;
             const isAdmin = false;
 
             // bcrypt password hash
-            const saltRounds = 2;
-            const hashedPassword = await bcrypt.hash(password, saltRounds)
+            const hashedPassword = await bcrypt.hash(password, config.get('saltRounds'))
 
             const vehicleName = req.body.vehicleName.toString();
             const vehicleModel = req.body.vehicleModel.toString();
