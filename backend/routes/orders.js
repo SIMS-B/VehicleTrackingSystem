@@ -131,6 +131,7 @@ router.get('/status', auth, async(req, res) => {
         
         if (isAdmin)
         {
+            // admin can be notified if orders need status change
             const allOrders = await Orders.query();
             
             allOrders.map(async(key) => {
@@ -141,8 +142,8 @@ router.get('/status', auth, async(req, res) => {
                 const totalDays = endingDate - startingDate;
                 const currentDays = Date.now() - startingDate;
 
-                //if structure
                 if (key.status == 'po_reception') {
+                    // condition checks current status of order to see if status needs to be changed
                     const days = (configArray[0]/sumOfConfigs)*totalDays
                     if (currentDays >= days) showOrders.push(key);
                 }
@@ -191,6 +192,7 @@ router.put('/', auth, async(req, res) => {
         
         if (isAdmin)
         {
+            // admin can change delivery date of order
             const orderList = req.body.array;
             const startingDate = Date.parse(req.body.start_date);
             const newDate = req.body.new_date
@@ -198,6 +200,7 @@ router.put('/', auth, async(req, res) => {
             
             if (orderList.length === 0) 
             {
+                // condition checks if any orders are filtered
                 return res.status(204).send('No order(s) selected');
             }
             else
@@ -211,6 +214,7 @@ router.put('/', auth, async(req, res) => {
                 {
                     if(newEndingDate > startingDate)
                     {
+                        // condition checks if delivery date is valid
                         const updatedOrders = orderList.map(async(key) => {
                             console.log(key);
                             await Orders.query().patch({delivery_date: newDate}).where('id', '=', key.id)
@@ -247,12 +251,14 @@ router.put('/status', auth, (req, res) => {
         
         if (isAdmin)
         {
+            // admin can change the status of orders
             const orderList = req.body.array;
             const currentStatus = req.body.current_status;
             const newStatus = req.body.new_status;
             
             if (orderList.length === 0) 
             {
+                // condition checks if any orders are filtered
                 return res.status(204).send('No order(s) selected');
             }
             else
@@ -266,6 +272,7 @@ router.put('/status', auth, (req, res) => {
                 {
                     if(newStatus != currentStatus)
                     {
+                        // condition checks if new status is the same as current status or not
                         const updatedOrders = orderList.map(async(key) => {
                             console.log(key);
                             await Orders.query().patch({status: newStatus}).where('id', '=', key.id)

@@ -15,6 +15,7 @@ router.get('/', auth, async (req, res) => {
         
         if (isAdmin)
         {
+            // admin gets access to configuration
             const defaultConfigs = await Configurations.query()
                                                         .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor')
                                                         .where('id', '=', 1);
@@ -42,6 +43,7 @@ router.post('/', auth, async (req, res) => {
         
         if (isAdmin)
         {
+            // admin gets access to configuration
             const newValues = req.body;
             const check = validateConfig(newValues);
             
@@ -52,6 +54,7 @@ router.post('/', auth, async (req, res) => {
             }  
             else
             {
+                // admin updates config values
                 const updatedConfig = await Configurations.query().patch({po_reception: newValues.po_reception, factory_floor: newValues.factory_floor, vin: newValues.vin, chassis: newValues.chassis, ready_to_ship: newValues.ready_to_ship, arrival_at_vendor: newValues.arrival_at_vendor}).where('id', '=', 1)
                 
                 console.log(newValues);

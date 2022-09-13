@@ -36,24 +36,29 @@ const inputValid = async (creds) => {
 
     if (creds.email == undefined)
     {
+        // user is logging in
         check = validateUser(creds);
         
         if (check.error!=null)
         {
+            // validation error
             return false;
         }
         else 
         {
+            // finding cnic in database
             validateQuery = await Users.query().findOne('cnic', '=', creds.cnic);
             
             if (validateQuery == null) 
             {
+                // couldn't find record in database
                 return false;
             }
         }
     }
     else if (creds.email != undefined)
     {
+        // admin is logging in
         check = validateAdmin(creds);
         
         if (check.error != null) 
@@ -72,6 +77,7 @@ const inputValid = async (creds) => {
     
     if (await bcrypt.compare(creds.password, validateQuery.password))
     {
+        // checks password against record in database
         return validateQuery;
     }
     else 
