@@ -13,55 +13,80 @@ const { Configurations } = require('../models/configurations');
 // importing middleware
 const auth = require('../middleware/auth');
 
-// generate Jwt
-
+// generates JWT
 const generateJwt = async (query) => {
     const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, config.get('jwt'));
-    if(query.is_admin) console.log("Admin logged in.");
-    else console.log("User logged in.");
+    
+    if (query.is_admin) 
+    {
+        console.log("Admin logged in.");
+    }
+    else 
+    {
+        console.log("User logged/verified in.");
+    }
+    
     return token;
 }
 
-// LOGIN function
-
+// validation for login and customer verification
 const inputValid = async (creds) => {
    
     let check, validateQuery;
-    if(creds.email == undefined)
+
+    if (creds.email == undefined)
     {
         check = validateUser(creds);
-        if(check.error!=null){
+        
+        if (check.error!=null)
+        {
             return false;
         }
-        else {
+        else 
+        {
             validateQuery = await Users.query().findOne('cnic', '=', creds.cnic);
-            if(validateQuery == null) return false;
+            
+            if (validateQuery == null) 
+            {
+                return false;
+            }
         }
     }
-    else if(creds.email != undefined)
+    else if (creds.email != undefined)
     {
         check = validateAdmin(creds);
-        if(check.error!=null) {
+        
+        if (check.error != null) 
+        {
             return false;
         }
-        else {
+        else 
+        {
             validateQuery = await Users.query().findOne('email', '=', creds.email); 
-            if(validateQuery == null) return false;
+            
+            if (validateQuery == null) 
+            {
+                return false;
+            }
         }} 
-    if(await bcrypt.compare(creds.password, validateQuery.password)){
+    
+    if (await bcrypt.compare(creds.password, validateQuery.password))
+    {
         return validateQuery;
-     }
-     else return false;
+    }
+    else 
+    {
+        return false;
+    }
 }
 
 // ROUTES
 
 router.get('/', auth, async (req, res) => {
-    
-    // req.user contains {is_admin, id}
     try
     {
         const userId = req.user.id.toString();
+        
         const userDetails = await Users.query()
                                             .select('cnic', 'email', 'phone_number', 'registration_date')
                                             .where('id', '=', userId);
@@ -70,19 +95,14 @@ router.get('/', auth, async (req, res) => {
     } 
     catch (err)
     {
-        console.log(err);   // remove this print
-        return res.status(400).send('Some error occured');
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
-
-
 });
 
 router.put('/', auth, async (req, res) => {
     
-    // put /api/users/ -> update password OR update phone_number OR update email
-    
-    // req.user contains {is_admin, id}
-    // req.body contains {oldPassword, newPassword}
     const userId = parseInt(req.user.id);
 
     // flags to check which property to update
@@ -121,22 +141,25 @@ router.put('/', auth, async (req, res) => {
                                                         .patch({ password: hashedPassword })
                                                         .where('id', '=', userId);
 
-                    return res.status(200).send('Password changed sucessfully');
+                    return res.status(200).send(updatedUser);
                 }
                 else
                 {
-                    return res.status(400).send(`Invalid new password. ${passwordValidationCheck.error}`);
+                    // unprocessable entity as input
+                    return res.status(422).send(`Validation check(s) failed for new password. ${passwordValidationCheck.error.details[0].message}`);
                 }
             }
             else
             {
-                return res.status(400).send('Invalid old password');
+                // unprocessable entity as input
+                return res.status(422).send('Old password is not correct');
             }
         } 
         catch (err)
         {
-            console.log(err);   // remove this print
-            return res.status(400).send('Some error occured');
+            // bad request
+            console.log(err);   // remove this console log
+            return res.status(400).send('Invalid data received');
         }
     }
 
@@ -157,17 +180,19 @@ router.put('/', auth, async (req, res) => {
                                                 .patch({ email: newEmail })
                                                 .where('id', '=', userId);
 
-                return res.status(200).send('Email changed sucessfully');
+                return res.status(200).send(updatedUser);
             }
             else
             {
-                return res.status(400).send(`Invalid new email. ${emailValidationCheck.error}`);
+                // unprocessable entity as input
+                return res.status(422).send(`Validation check(s) failed for new email. ${emailValidationCheck.error.details[0].message}`);
             } 
         } 
         catch (err)
         {
-            console.log(err);   // remove this print
-            return res.status(400).send('Some error occured');
+            // bad request
+            console.log(err);   // remove this console log
+            return res.status(400).send('Invalid data received');
         }
     }
 
@@ -188,159 +213,190 @@ router.put('/', auth, async (req, res) => {
                                                     .patch({ phone_number: newPhoneNumber })
                                                     .where('id', '=', userId);
 
-                return res.status(200).send('Phone number changed sucessfully');
+                return res.status(200).send(updatedUser);
             }
             else
             {
-                return res.status(400).send(`Invalid new phone number. ${phoneNumberValidationCheck.error}`);
+                // unprocessable entity as input
+                return res.status(422).send(`Validation check(s) failed for new phone number. ${phoneNumberValidationCheck.error.details[0].message}`);
             } 
         } 
         catch (err)
         {
-            console.log(err);   // remove this print
-            return res.status(400).send('Some error occured');
+            // bad request
+            console.log(err);   // remove this console log
+            return res.status(400).send('Invalid data received');
         }
     } 
 });
 
 router.post('/', auth, async (req, res) => {
-
-    // fetch all configurations
-    const configurationQuery = await Configurations.query()
-                                                    .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor');
-
-    const configurationSum = parseInt(configurationQuery[0].po_reception) + parseInt(configurationQuery[0].factory_floor) + parseInt(configurationQuery[0].vin) + parseInt(configurationQuery[0].chassis) + parseInt(configurationQuery[0].ready_to_ship) + parseInt(configurationQuery[0].arrival_at_vendor);
-
-    // check if user with cnic exists or not
-    const cnic = parseInt(req.body.cnic);
-    const cnicCheck = await Users.query()
-                                    .select('id', 'cnic', 'first_name', 'last_name', 'email', 'phone_number')
-                                    .where('cnic', '=', cnic);
-
-    if (cnicCheck.length == 0)
+    try 
     {
-        // customer does not exist, create new customer and order
-        try
+        // fetch all configurations
+        const configurationQuery = await Configurations.query()
+                                                        .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor');
+
+        const configurationSum = parseInt(configurationQuery[0].po_reception) + parseInt(configurationQuery[0].factory_floor) + parseInt(configurationQuery[0].vin) + parseInt(configurationQuery[0].chassis) + parseInt(configurationQuery[0].ready_to_ship) + parseInt(configurationQuery[0].arrival_at_vendor);
+
+        // check if user with cnic exists or not
+        const cnic = parseInt(req.body.cnic);
+        const cnicCheck = await Users.query()
+                                        .select('id', 'cnic', 'first_name', 'last_name', 'email', 'phone_number')
+                                        .where('cnic', '=', cnic);
+
+        if (cnicCheck.length == 0)
         {
-            const currDate = Date.now();
-            const firstName = req.body.firstName.toString();
-            const lastName = req.body.lastName.toString();
-            const email = req.body.email.toString();    // validate email
-            const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
-            const password = Math.random().toString(36).slice(2, 10).toString();
-            console.log("Random Password: ", password)
-            const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
-            const isVerified = false;
-            const isAdmin = false;
-
-            // bcrypt password hash
-            const hashedPassword = await bcrypt.hash(password, config.get('saltRounds'))
-
-            const vehicleName = req.body.vehicleName.toString();
-            const vehicleModel = req.body.vehicleModel.toString();
-            const vehicleColor = req.body.vehicleColor.toString();
-            const status = 'po_reception'; // all new orders are set at po_reception stage
-            const startingDate = registrationDate;
-            const configInMillisec = configurationSum * 86400000;
-            const offsetDateInMillisec = currDate + configInMillisec;
-            const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
-            const config = configurationQuery[0];
-
-            const insertQuery = await Users.query().insertGraph(
+            // customer does not exist, create new customer and order
+            try
             {
-                cnic: cnic,
-                first_name: firstName,
-                last_name: lastName, 
-                email: email,
-                phone_number: phoneNumber,
-                password: hashedPassword,
-                registration_date: registrationDate,
-                is_verified: isVerified,
-                is_admin: isAdmin,
+                const currDate = Date.now();
+                const firstName = req.body.firstName.toString();
+                const lastName = req.body.lastName.toString();
+                const email = req.body.email.toString();    // validate email
+                const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
+                const password = Math.random().toString(36).slice(2, 10).toString();
                 
-                Order: [{
+                console.log("Random Password: ", password)
+                
+                const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+                const isVerified = false;
+                const isAdmin = false;
+
+                // bcrypt password hash
+                const hashedPassword = await bcrypt.hash(password, config.get('saltRounds'))
+
+                const vehicleName = req.body.vehicleName.toString();
+                const vehicleModel = req.body.vehicleModel.toString();
+                const vehicleColor = req.body.vehicleColor.toString();
+                const status = 'po_reception'; // all new orders are set at po_reception stage
+                const startingDate = registrationDate;
+                const configInMillisec = configurationSum * 86400000;
+                const offsetDateInMillisec = currDate + configInMillisec;
+                const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+                const config = configurationQuery[0];
+
+                const insertQuery = await Users.query().insertGraph(
+                {
                     cnic: cnic,
-                    vehicle_name: vehicleName,
-                    vehicle_model: vehicleModel,
-                    vehicle_color: vehicleColor,
-                    status: status,
-                    starting_date: startingDate,
-                    delivery_date: deliveryDate,
-                    config: config
-                }]
-            })
-        
-            return res.status(200).send('New customer and their order created successfully');
+                    first_name: firstName,
+                    last_name: lastName, 
+                    email: email,
+                    phone_number: phoneNumber,
+                    password: hashedPassword,
+                    registration_date: registrationDate,
+                    is_verified: isVerified,
+                    is_admin: isAdmin,
+                    
+                    Order: [{
+                        cnic: cnic,
+                        vehicle_name: vehicleName,
+                        vehicle_model: vehicleModel,
+                        vehicle_color: vehicleColor,
+                        status: status,
+                        starting_date: startingDate,
+                        delivery_date: deliveryDate,
+                        config: config
+                    }]
+                })
+            
+                return res.status(200).send(insertQuery);
+            }
+            catch (err)
+            {
+                // bad request
+                console.log(err);   // remove this console log
+                return res.status(400).send('Invalid data received');
+            }
         }
-        catch (err)
+        else
         {
-            console.log(err);   // remove this print
-            return res.status(400).send('Some error occured');
+            // customer exists, create only a new order associated to them
+            try
+            {
+                const vehicleName = req.body.vehicleName.toString();
+                const vehicleModel = req.body.vehicleModel.toString();
+                const vehicleColor = req.body.vehicleColor.toString();
+                const status = 'po_reception'; // all new orders are set at po_reception stage
+            
+                const currDate = Date.now();
+                const startingDate = new Date(currDate).toISOString().slice(0, 10).toString();
+                const configInMillisec = configurationSum * 86400000;
+                const offsetDateInMillisec = currDate + configInMillisec;
+                const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
+                const config = configurationQuery[0];
+
+                const customerId = parseInt(cnicCheck[0].id);
+                const userId = parseInt(cnicCheck[0].id);
+                
+                const insertQuery = await Users.relatedQuery('Order')
+                                                .for(customerId)
+                                                .insert({
+                                                    cnic: cnic,
+                                                    vehicle_name: vehicleName,
+                                                    vehicle_model: vehicleModel,
+                                                    vehicle_color: vehicleColor,
+                                                    status: status,
+                                                    starting_date: startingDate,
+                                                    delivery_date: deliveryDate,
+                                                    user_id: userId,
+                                                    config: config
+                                                })
+
+                return res.status(200).send(insertQuery);
+            }
+            catch (err)
+            {
+                // bad request
+                console.log(err);   // remove this console log
+                return res.status(400).send('Invalid data received');
+            }
         }
     }
-    else
+    catch (err)
     {
-        // customer exists, create only a new order associated to them
-        try
-        {
-            const vehicleName = req.body.vehicleName.toString();
-            const vehicleModel = req.body.vehicleModel.toString();
-            const vehicleColor = req.body.vehicleColor.toString();
-            const status = 'po_reception'; // all new orders are set at po_reception stage
-        
-            const currDate = Date.now();
-            const startingDate = new Date(currDate).toISOString().slice(0, 10).toString();
-            const configInMillisec = configurationSum * 86400000;
-            const offsetDateInMillisec = currDate + configInMillisec;
-            const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
-            const config = configurationQuery[0];
-
-            const customerId = parseInt(cnicCheck[0].id);
-            const userId = parseInt(cnicCheck[0].id);
-            
-            const insertQuery = await Users.relatedQuery('Order')
-                                            .for(customerId)
-                                            .insert({
-                                                cnic: cnic,
-                                                vehicle_name: vehicleName,
-                                                vehicle_model: vehicleModel,
-                                                vehicle_color: vehicleColor,
-                                                status: status,
-                                                starting_date: startingDate,
-                                                delivery_date: deliveryDate,
-                                                user_id: userId,
-                                                config: config
-                                            })
-
-            return res.status(200).send('New order for existing customer created successfully');
-        }
-        catch (err)
-        {
-            console.log(err);   // remove this print
-            return res.status(400).send('Some error occured');
-        }
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
 });
 
 router.post('/login', async(req, res) => {
-    try{
+    try
+    {
         const logCreds = req.body;
+        
         const result = await inputValid(logCreds);
-        if(!result){
-            return res.status(400).send("Invalid Input");
-        }
-        if(!result.is_verified)
+        
+        if (!result)
         {
-            return res.status(400).send("Your account is not verified.")
+            // unprocessable entity as input
+            return res.status(422).send('Validation check(s) failed');
+                
         }
+        if (!result.is_verified)
+        {
+            // unauthorized to login without verification
+            return res.status(401).send('Login failed due to non-verification')
+        }
+        
         console.log("result :", result)
-        token = await generateJwt(result)
-        if(!token) return res.send(400);
-        else return res.status(200).send(token);
+        
+        token = await generateJwt(result);
+        if (!token) 
+        { 
+            return res.status(400).send('Invalid data received');
+        }
+        else 
+        {
+            return res.status(200).send(token);
+        }
     }
     catch (err)
     {
-        console.log(err);
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
 });
 
@@ -349,23 +405,41 @@ router.post('/verify', async(req, res) => {
     {
         const creds = req.body;
         const validation = await inputValid(creds);
-        if(!validation) res.status(400).send("Some error occurred");
-        else {
-            if(validation.is_verified) res.send("Your account is already verified");
+        
+        if (!validation) 
+        {
+            // unprocessable entity as input
+            return res.status(422).send('Validation check(s) failed');
+        }
+        else 
+        {
+            if (validation.is_verified) 
+            {
+                // conflict of request with current state of database
+                res.status(409).send('Customer already verified');
+            }
             else 
             {
                 const verifyUser = await Users.query().patch({is_verified: true}).where('id', '=', validation.id);
                 
                 // generate jwt for redirection to change password from front-end
-                token = await generateJwt(result)
-                if(!token) return res.send(400).send('Failed to generated a jwt');
-                else return res.status(200).send(token);
+                token = await generateJwt(result);
+                if (!token) 
+                {
+                    return res.status(400).send('Invalid data received');
+                }
+                else 
+                {
+                    return res.status(200).send(token);
+                }
             }
         }
     }
     catch(err)
     {
-        console.log(err);
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
 });
 

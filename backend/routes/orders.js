@@ -13,7 +13,6 @@ const { route } = require('./users');
 // ROUTES
 
 router.get('/', auth, async (req, res) => {
-
     try
     {
         const isAdmin = req.user.is_admin;
@@ -21,26 +20,26 @@ router.get('/', auth, async (req, res) => {
         const queryParams = req.query;
         const numberOfParameters = Object.keys(queryParams).length;
 
-        // return all the orders if there are no query paramters to filter on
+        
         if (numberOfParameters == 0)
         {
-            // return all orders for admin
+            // return all the orders if there are no query paramters to filter on
+            
             if (isAdmin)
             {
+                // return all orders for admin
                 const allOrders = await Orders.query();
 
-                return res.status(200).send(`All orders fetched ${JSON.stringify(allOrders)}`);
+                return res.status(200).send(allOrders);
             }
             else
             {
                 // return all orders of customer by filtering on ID
-                
                 const allOrdersOfCustomer = await Orders.query()
-                                                            .where('user_id', '=', userId);
+                                                        .where('user_id', '=', userId);
 
                 // calculate ETA of each order
                 allOrdersOfCustomer.map((order) => {
-
                     const startingDate = order.starting_date;
                     const deliveryDate = order.delivery_date;
 
@@ -52,54 +51,54 @@ router.get('/', auth, async (req, res) => {
                     order.eta = dayDifference;
                 });
 
-                return res.status(200).send(`All customer's orders fetched ${JSON.stringify(allOrdersOfCustomer)}`);
+                return res.status(200).send(allOrdersOfCustomer);
             }
         }
         else
         {
-            // filter based on query parameter to filter on
-
-            // return all orders for admin filtered on provided filters
+            // filter based on query parameter(s)
             if (isAdmin)
             {
+                // return all orders for admin filtered on provided filters
                 const allOrders = await Orders.query().modify((QueryBuilder) => {
                     Object.keys(queryParams).map((key) => {
                         QueryBuilder.where(key, queryParams[key]);
                     });
                 });
-
-                // if empty then filter matches no result(s)
+ 
                 if (allOrders.length == 0)
                 {
+                    // length being 0 means that filter(s) match no result(s)
                     return res.status(204).send('Filter(s) do not match any result');
                 }
                 else
                 {
-                    // otherwise return results
-                    return res.status(200).send(`All orders fetched ${JSON.stringify(allOrders)}`);
+                    // sucessful filteration with valid results
+                    return res.status(200).send(allOrders);
                 }
             }
             else
             {
+                // return all orders of the customer filtered on provided filters
                 const allOrdersOfCustomer = await Orders.query().modify((QueryBuilder) => {
                     Object.keys(queryParams).map((key) => {
                         QueryBuilder.where(key, queryParams[key]);
                     });
+                    
                     QueryBuilder.where('user_id','=',userId);
                 });
 
-                // if empty then filter matches no result(s)
                 if (allOrdersOfCustomer.length == 0)
                 {
+                    // length being 0 means that filter(s) match no result(s)
                     return res.status(204).send('Filter(s) do not match any result');
                 }
                 else
                 {
-                    // otherwise return results after adding their ETAs
+                    // sucessful filteration with valid results. Add ETA to each order
 
                     // calculate ETA of each order
                     allOrdersOfCustomer.map((order) => {
-
                         const startingDate = order.starting_date;
                         const deliveryDate = order.delivery_date;
 
@@ -111,89 +110,103 @@ router.get('/', auth, async (req, res) => {
                         order.eta = dayDifference;
                     });
 
-                    return res.status(200).send(`All orders fetched ${JSON.stringify(allOrdersOfCustomer)}`);
+                    return res.status(200).send(allOrdersOfCustomer);
                 }
             }
         }  
     } 
     catch (err)
     {
+        // bad request
         console.log(err);   // remove this console log
-        return res.status(400).send('Some error occured');
+        return res.status(400).send('Invalid data received');
     }
 });
 
-
-//Show order notification for status change
 router.get('/status', auth, async(req, res) => {
     try
     {
         let showOrders=[];
         const isAdmin = req.user.is_admin;
-    if(isAdmin)
-    {
-        const allOrders = await Orders.query();
-        allOrders.map(async(key) => {
-            const configArray = Object.values(key.config);
-            const sumOfConfigs = configArray.reduce((a,b)=>a+b, 0);
-            const endingDate = Date.parse(key.delivery_date);
-            const startingDate = Date.parse(key.starting_date);
-            const totalDays = endingDate - startingDate;
-            const currentDays = Date.now() - startingDate;
+        
+        if (isAdmin)
+        {
+            const allOrders = await Orders.query();
+            
+            allOrders.map(async(key) => {
+                const configArray = Object.values(key.config);
+                const sumOfConfigs = configArray.reduce((a,b)=>a+b, 0);
+                const endingDate = Date.parse(key.delivery_date);
+                const startingDate = Date.parse(key.starting_date);
+                const totalDays = endingDate - startingDate;
+                const currentDays = Date.now() - startingDate;
 
-            //if structure
+                //if structure
+                if (key.status == 'po_reception') {
+                    const days = (configArray[0]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+                else if (key.status == 'factory_floor') {
+                    const days = (configArray[1]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+                else if (key.status == 'vin') {
+                    const days = (configArray[2]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+                else if (key.status == 'chassis') {
+                    const days = (configArray[3]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+                else if (key.status == 'ready_to_ship') {
+                    const days = (configArray[4]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+                else if (key.status == 'arrived_at_vendor') {
+                    const days = (configArray[5]/sumOfConfigs)*totalDays
+                    if (currentDays >= days) showOrders.push(key);
+                }
+            })
 
-            if(key.status == 'po_reception') {
-                const days = (configArray[0]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-            else if(key.status == 'factory_floor') {
-                const days = (configArray[1]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-            else if(key.status == 'vin') {
-                const days = (configArray[2]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-            else if(key.status == 'chassis') {
-                const days = (configArray[3]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-            else if(key.status == 'ready_to_ship') {
-                const days = (configArray[4]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-            else if(key.status == 'arrived_at_vendor') {
-                const days = (configArray[5]/sumOfConfigs)*totalDays
-                if(currentDays >= days) showOrders.push(key);
-            }
-        })
-        return res.status(200).send(showOrders);
+            return res.status(200).send(showOrders);
+        }
+        else 
+        {
+            // customer is forbidden to view this information
+            return res.status(403).send('You cannot access this page');
+        } 
     }
-    else return res.status(403).send("You cannot access this page!"); 
-}
-catch(err)
-{
-    console.log(err);
-}  
+    catch (err)
+    {
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
+    }  
 });
 
-
- // Update Delivery Date
 router.put('/', auth, async(req, res) => {
     try
     {
         const isAdmin = req.user.is_admin;
-        if(isAdmin)
+        
+        if (isAdmin)
         {
             const orderList = req.body.array;
             const startingDate = Date.parse(req.body.start_date);
             const newDate = req.body.new_date
             const newEndingDate = Date.parse(newDate);
-            if(orderList.length === 0) res.status(400).send("No orders selected!");
+            
+            if (orderList.length === 0) 
+            {
+                return res.status(204).send('No order(s) selected');
+            }
             else
             {
-                if(!newDate) res.status(400).send("No date given!");
+                if (!newDate) 
+                {
+                    // unprocessable entity as input
+                    return res.status(422).send('New ending date not provided');
+                }
                 else
                 {
                     if(newEndingDate > startingDate)
@@ -203,59 +216,82 @@ router.put('/', auth, async(req, res) => {
                             await Orders.query().patch({delivery_date: newDate}).where('id', '=', key.id)
                         });
                     
-                        res.status(200).send("Successfully Updated Delivery Date!");
+                        return res.status(200).send(updatedOrders);
                     }
                     else
                     {
-                        res.status(400).send("Enter a Valid Ending Date!");
+                        // unprocessable entity as input
+                        return res.status(422).send('Ending date cannot be smaller than starting date');
                     }
                 }
             }
         }
         else
         {
-            res.status(403).send("You cannot access this page.")
+            // customer is forbidden to view this information
+            return res.status(403).send('You cannot access this page');
         }
     }
     catch (err)
     {
-        console.log(err);
-
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
 });
 
-// update status of ongoing orders
 router.put('/status', auth, (req, res) => {
-    try{
+    try
+    {
         const isAdmin = req.user.is_admin;
-        if(isAdmin)
+        
+        if (isAdmin)
         {
             const orderList = req.body.array;
-            const currentStatus = req.body.current_status
+            const currentStatus = req.body.current_status;
             const newStatus = req.body.new_status;
-            if(orderList.length === 0) res.status(400).send("No orders selected!");
+            
+            if (orderList.length === 0) 
+            {
+                return res.status(204).send('No order(s) selected');
+            }
             else
             {
-                if(!newStatus) res.status(400).send("No status given!");
+                if (!newStatus) 
+                {
+                    // unprocessable entity as input
+                    return res.status(422).send('New status not provided');
+                }
                 else
                 {
-                    const updatedOrders = orderList.map(async(key) => {
-                        console.log(key);
-                        await Orders.query().patch({status: newStatus}).where('id', '=', key.id)
-                    });
-                    res.status(200).send("Successfully Updated Status!");
+                    if(newStatus != currentStatus)
+                    {
+                        const updatedOrders = orderList.map(async(key) => {
+                            console.log(key);
+                            await Orders.query().patch({status: newStatus}).where('id', '=', key.id)
+                        });
+    
+                        return res.status(200).send(updatedOrders);
+                    }
+                    else
+                    {
+                        // unprocessable entity as input
+                        return res.status(422).send('New status cannot be same as current status');
+                    }
                 }
             }            
         }
         else
         {
-
-            res.status(403).send("You cannot access this page.");
+            // customer is forbidden to view this information
+            return res.status(403).send('You cannot access this page');
         }
     }
     catch(err)
     {
-        console.log(err);
+        // bad request
+        console.log(err);   // remove this console log
+        return res.status(400).send('Invalid data received');
     }
 });
 
