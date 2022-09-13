@@ -50,12 +50,11 @@ const inputValid = async (creds) => {
 
 // validation from database
 
-const dbValid = (creds, validateQuery) => {
-        if(bcrypt.compare(creds.password, validateQuery.password)){
+const dbValid = async (creds, validateQuery) => {
+        if(await bcrypt.compare(creds.password, validateQuery.password)){
            return validateQuery;
         }
         else return false;
-
 }
 
 // ROUTES
@@ -110,7 +109,7 @@ router.put('/', auth, async (req, res) => {
 
             const oldPasswordToCompare = oldPasswordInDb.toString();
             
-            if (bcrypt.compare(oldPassword, oldPasswordToCompare))
+            if (await bcrypt.compare(oldPassword, oldPasswordToCompare))
             {
                 // validate new password against password validation checks
                 const passwordValidationCheck = validatePassword( {pwd: newPassword} ); 
