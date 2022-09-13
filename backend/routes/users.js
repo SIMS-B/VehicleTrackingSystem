@@ -363,7 +363,11 @@ router.post('/verify', async(req, res) => {
             else 
             {
                 const verifyUser = await Users.query().patch({is_verified: true}).where('id', '=', validation.id);
-                res.status(200).send("Your account is now verified.")
+                
+                // generate jwt for redirection to change password from front-end
+                token = await generateJwt(result)
+                if(!token) return res.send(400).send('Failed to generated a jwt');
+                else return res.status(200).send(token);
             }
         }
     }
