@@ -14,5 +14,13 @@
     },
     "port": 8080,
     "jwt": "jwtPrivateKey",
-    "saltRounds": 2
+    
+    "saltRounds": 2,
+    
+    "swaggerServerURL": "http://localhost:8080",
+    "swaggerBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+    } 
 }

@@ -14,6 +14,50 @@ const { Logger } = require('winston');
 
 // ROUTES
 
+/**
+ * @swagger
+ * /api/orders:
+ *  get:
+ *      description: Fetches all orders for admin OR fetches all orders of a customer
+ *      parameters:
+ *          - name: cnic
+ *            in: query
+ *            schema:
+ *              type: integer
+ *          - name: vehicle_name
+ *            in: query
+ *            schema:
+ *              type: string
+ *          - name: vehicle_model
+ *            in: query
+ *            schema:
+ *              type: string
+ *          - name: vehicle_color
+ *            in: query
+ *            schema:
+ *              type: string 
+ *          - name: status
+ *            in: query
+ *            schema:
+ *              type: string 
+ *          - name: starting_date
+ *            in: query
+ *            schema:
+ *              type: string 
+ *          - name: delivery_date
+ *            in: query
+ *            schema:
+ *              type: string 
+ *      responses:
+ *          200: 
+ *              description: Order(s) have been fetched successfully
+ *          204: 
+ *              description: There are no orders that match the provided filters
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.get('/', auth, async (req, res) => {
     try
     {
@@ -38,6 +82,7 @@ router.get('/', auth, async (req, res) => {
             {
                 // return all orders of customer by filtering on ID
                 const allOrdersOfCustomer = await Orders.query()
+                                                        .select('vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date', 'id')
                                                         .where('user_id', '=', userId);
 
                 // calculate ETA of each order
@@ -84,7 +129,9 @@ router.get('/', auth, async (req, res) => {
                 // return all orders of the customer filtered on provided filters
                 const allOrdersOfCustomer = await Orders.query().modify((QueryBuilder) => {
                     Object.keys(queryParams).map((key) => {
-                        QueryBuilder.where(key, queryParams[key]);
+                        QueryBuilder
+                            .select('vehicle_name', 'vehicle_model', 'vehicle_color', 'status', 'starting_date', 'delivery_date', 'id')
+                            .where(key, queryParams[key]);
                     });
                     
                     QueryBuilder.where('user_id','=',userId);
@@ -125,6 +172,21 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/orders/status:
+ *  get:
+ *      description: Get all orders whose status need to be updated
+ *      responses:
+ *          200: 
+ *              description: Admin is able to fetch fetch orders that are to be updated successfully
+ *          403:
+ *              description: Customer is unauthorized to fetch orders that are to be updated
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.get('/status', auth, async(req, res) => {
     try
     {
@@ -187,6 +249,43 @@ router.get('/status', auth, async(req, res) => {
     }  
 });
 
+/**
+ * @swagger
+ * /api/orders:
+ *  put:
+ *      description: Update Delivery date
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          array:
+ *                              description: Array of order objects to be updated
+ *                              type: array
+ *                              items:
+ *                                  type: object
+ *                                  properties:
+ *                                      id:
+ *                                          type: integer
+ *                          start_date:
+ *                              type: string
+ *                          new_date:
+ *                              description: New ending date for the provided order objects
+ *                              type: string
+ *      responses:
+ *          200: 
+ *              description: Admin is able to update ending date of selected order objects successfully
+ *          403:
+ *              description: Customer is unauthorized to fetch configurations
+ *          422:
+ *              description: Validation check(s) failed. Ending date cannot be smaller than starting date
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.put('/', auth, async(req, res) => {
     try
     {
@@ -247,6 +346,43 @@ router.put('/', auth, async(req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/orders/status:
+ *  put:
+ *      description: Update Delivery date
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          array:
+ *                              description: Array of order objects to be updated
+ *                              type: array
+ *                              items:
+ *                                  type: object
+ *                                  properties:
+ *                                      id:
+ *                                          type: integer
+ *                          current_status:
+ *                              type: string
+ *                          new_status:
+ *                              description: New ending date for the provided order objects
+ *                              type: string
+ *      responses:
+ *          200: 
+ *              description: Admin is able to update ending date of selected order objects successfully
+ *          403:
+ *              description: Customer is unauthorized to fetch configurations
+ *          422:
+ *              description: Validation check(s) failed. Ending date cannot be smaller than starting date
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.put('/status', auth, (req, res) => {
     try
     {
