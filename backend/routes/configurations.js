@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const logger = require("../logger");
 
 const { Configurations, validateConfig } = require('../models/configurations');   // importing model for this route
 
@@ -31,7 +32,7 @@ router.get('/', auth, async (req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err)
         return res.status(400).send('Invalid data received');
     }
 });
@@ -50,6 +51,7 @@ router.post('/', auth, async (req, res) => {
             if (check.error != null) 
             {
                 // unprocessable entity as input
+                logger.error("New Config Values are Invalid!")
                 return res.status(422).send(`Validation check(s) failed. ${check.error.details[0].message}`);
             }  
             else
@@ -57,7 +59,7 @@ router.post('/', auth, async (req, res) => {
                 // admin updates config values
                 const updatedConfig = await Configurations.query().patch({po_reception: newValues.po_reception, factory_floor: newValues.factory_floor, vin: newValues.vin, chassis: newValues.chassis, ready_to_ship: newValues.ready_to_ship, arrival_at_vendor: newValues.arrival_at_vendor}).where('id', '=', 1)
                 
-                console.log(newValues);
+                logger.info("New Config Values Saved!");
                 res.status(200).send(newValues);
             }
         }
@@ -71,7 +73,7 @@ router.post('/', auth, async (req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err); 
         return res.status(400).send('Invalid data received');
     }
 });
