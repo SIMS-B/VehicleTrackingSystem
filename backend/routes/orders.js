@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const logger = require("../logger");
 
 const { Orders } = require('../models/orders');   // importing model for this route
 
@@ -9,6 +10,7 @@ const auth = require('../middleware/auth');
 // importing libraries
 const knex = require('knex');
 const { route } = require('./users');
+const { Logger } = require('winston');
 
 // ROUTES
 
@@ -165,7 +167,7 @@ router.get('/', auth, async (req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err); 
         return res.status(400).send('Invalid data received');
     }
 });
@@ -242,7 +244,7 @@ router.get('/status', auth, async(req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);  
         return res.status(400).send('Invalid data received');
     }  
 });
@@ -307,7 +309,8 @@ router.put('/', auth, async(req, res) => {
                 if (!newDate) 
                 {
                     // unprocessable entity as input
-                    return res.status(422).send('New ending date not provided');
+                    logger.error("New Delivery Date not provided.")
+                    return res.status(422).send('New delivery date not provided');
                 }
                 else
                 {
@@ -315,15 +318,15 @@ router.put('/', auth, async(req, res) => {
                     {
                         // condition checks if delivery date is valid
                         const updatedOrders = orderList.map(async(key) => {
-                            console.log(key);
                             await Orders.query().patch({delivery_date: newDate}).where('id', '=', key.id)
                         });
-                    
+                        logger.info("Delivery Date Updated to " + newDate + " for filtered orders.")
                         return res.status(200).send(updatedOrders);
                     }
                     else
                     {
                         // unprocessable entity as input
+                        logger.error("New Delivery Date Cannot Be Earlier than Old Delivery Date")
                         return res.status(422).send('Ending date cannot be smaller than starting date');
                     }
                 }
@@ -338,7 +341,7 @@ router.put('/', auth, async(req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);   
         return res.status(400).send('Invalid data received');
     }
 });
@@ -402,6 +405,7 @@ router.put('/status', auth, (req, res) => {
                 if (!newStatus) 
                 {
                     // unprocessable entity as input
+                    logger.error("New Status Not Provided!")
                     return res.status(422).send('New status not provided');
                 }
                 else
@@ -410,15 +414,15 @@ router.put('/status', auth, (req, res) => {
                     {
                         // condition checks if new status is the same as current status or not
                         const updatedOrders = orderList.map(async(key) => {
-                            console.log(key);
                             await Orders.query().patch({status: newStatus}).where('id', '=', key.id)
                         });
-    
+                        logger.info("Order Status Updated to " + newStatus + " for filtered orders." )
                         return res.status(200).send(updatedOrders);
                     }
                     else
                     {
                         // unprocessable entity as input
+                        logger.error("New Status cannot be same as current status!")
                         return res.status(422).send('New status cannot be same as current status');
                     }
                 }
@@ -433,7 +437,7 @@ router.put('/status', auth, (req, res) => {
     catch(err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);  
         return res.status(400).send('Invalid data received');
     }
 });

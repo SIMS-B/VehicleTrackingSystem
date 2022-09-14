@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const logger = require("../logger");
 
 // importing app configurations
 const config = require('config');
@@ -19,11 +20,11 @@ const generateJwt = async (query) => {
     
     if (query.is_admin) 
     {
-        console.log("Admin logged in.");
+        logger.info("Admin " + query.email + " logged in.");
     }
     else 
     {
-        console.log("User logged/verified in.");
+        logger.info("User " + query.cnic + " logged in/verified.");
     }
     
     return token;
@@ -33,8 +34,7 @@ const generateJwt = async (query) => {
 const inputValid = async (creds) => {
    
     let check, validateQuery;
-
-    if (creds.email == undefined)
+    if (!creds.hasOwnProperty('email'))
     {
         // user is logging in
         check = validateUser(creds);
@@ -56,7 +56,7 @@ const inputValid = async (creds) => {
             }
         }
     }
-    else if (creds.email != undefined)
+    else if (creds.hasOwnProperty('email'))
     {
         // admin is logging in
         check = validateAdmin(creds);
@@ -109,13 +109,12 @@ router.get('/', auth, async (req, res) => {
         const userDetails = await Users.query()
                                             .select('cnic', 'email', 'phone_number', 'registration_date')
                                             .where('id', '=', userId);
-
         return res.status(200).send(userDetails);
     } 
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err); 
         return res.status(400).send('Invalid data received');
     }
 });
@@ -218,7 +217,7 @@ router.get('/customers', auth, async(req, res) => {
     catch (err)
     {
         //bad request
-        console.log(err); // remove this console log
+        logger.error(err); // remove this console log
         return res.status(400).send('Invalid data received');
     }
 });
@@ -291,25 +290,27 @@ router.put('/', auth, async (req, res) => {
                     const updatedUser = await Users.query()
                                                         .patch({ password: hashedPassword })
                                                         .where('id', '=', userId);
-
+                    logger.info("Password updated for " + userId)
                     return res.status(200).send(updatedUser);
                 }
                 else
                 {
                     // unprocessable entity as input
+                    logger.error(newPassword + " is not a valid password!")
                     return res.status(422).send(`Validation check(s) failed for new password. ${passwordValidationCheck.error.details[0].message}`);
                 }
             }
             else
             {
                 // unprocessable entity as input
+                logger.error(oldPassword + "doesn't match old password")
                 return res.status(422).send('Old password is not correct');
             }
         } 
         catch (err)
         {
             // bad request
-            console.log(err);   // remove this console log
+            logger.error(err);
             return res.status(400).send('Invalid data received');
         }
     }
@@ -330,19 +331,20 @@ router.put('/', auth, async (req, res) => {
                 const updatedUser = await Users.query()
                                                 .patch({ email: newEmail })
                                                 .where('id', '=', userId);
-
+                logger.info("Email updated for " + userId)
                 return res.status(200).send(updatedUser);
             }
             else
             {
                 // unprocessable entity as input
+                logger.error(newEmail + " is not a valid email!")
                 return res.status(422).send(`Validation check(s) failed for new email. ${emailValidationCheck.error.details[0].message}`);
             } 
         } 
         catch (err)
         {
             // bad request
-            console.log(err);   // remove this console log
+            logger.error(err);
             return res.status(400).send('Invalid data received');
         }
     }
@@ -363,19 +365,20 @@ router.put('/', auth, async (req, res) => {
                 const updatedUser = await Users.query()
                                                     .patch({ phone_number: newPhoneNumber })
                                                     .where('id', '=', userId);
-
+                logger.info("Phone Number changed for " + userId)
                 return res.status(200).send(updatedUser);
             }
             else
             {
                 // unprocessable entity as input
+                logger.error(newPhoneNumber + " is not a valid phone number!")
                 return res.status(422).send(`Validation check(s) failed for new phone number. ${phoneNumberValidationCheck.error.details[0].message}`);
             } 
         } 
         catch (err)
         {
             // bad request
-            console.log(err);   // remove this console log
+            logger.error(err);
             return res.status(400).send('Invalid data received');
         }
     } 
@@ -442,7 +445,7 @@ router.post('/', auth, async (req, res) => {
                 const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
                 const password = Math.random().toString(36).slice(2, 10).toString();
                 
-                console.log("Random Password: ", password)
+                logger.info("First Time Random Generated Password: " + password)
                 
                 const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
                 const isVerified = false;
@@ -484,13 +487,13 @@ router.post('/', auth, async (req, res) => {
                         config: config
                     }]
                 })
-            
+                logger.log("New Customer " + cnic + " and Order created.")
                 return res.status(200).send(insertQuery);
             }
             catch (err)
             {
                 // bad request
-                console.log(err);   // remove this console log
+                logger.error(err);  
                 return res.status(400).send('Invalid data received');
             }
         }
@@ -527,13 +530,13 @@ router.post('/', auth, async (req, res) => {
                                                     user_id: userId,
                                                     config: config
                                                 })
-
+                logger.info("New Order Created for User " + cnic)
                 return res.status(200).send(insertQuery);
             }
             catch (err)
             {
                 // bad request
-                console.log(err);   // remove this console log
+                logger.error(err);  
                 return res.status(400).send('Invalid data received');
             }
         }
@@ -541,7 +544,7 @@ router.post('/', auth, async (req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);  
         return res.status(400).send('Invalid data received');
     }
 });
@@ -579,22 +582,21 @@ router.post('/login', async(req, res) => {
     try
     {
         const logCreds = req.body;
-        
         const result = await inputValid(logCreds);
         
         if (!result)
         {
             // unprocessable entity as input
+            logger.error("Validation Unsuccessful!")
             return res.status(422).send('Validation check(s) failed');
                 
         }
         if (!result.is_verified)
         {
             // unauthorized to login without verification
+            logger.error("User not verified!")
             return res.status(401).send('Login failed due to non-verification')
         }
-        
-        console.log("result :", result)
         
         token = await generateJwt(result);
         if (!token) 
@@ -609,7 +611,7 @@ router.post('/login', async(req, res) => {
     catch (err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);  
         return res.status(400).send('Invalid data received');
     }
 });
@@ -646,10 +648,10 @@ router.post('/verify', async(req, res) => {
     {
         const creds = req.body;
         const validation = await inputValid(creds);
-        
         if (!validation) 
         {
             // unprocessable entity as input
+            logger.error("Validation Unsuccessful!")
             return res.status(422).send('Validation check(s) failed');
         }
         else 
@@ -657,12 +659,14 @@ router.post('/verify', async(req, res) => {
             if (validation.is_verified) 
             {
                 // conflict of request with current state of database
+                logger.error("User " + validation.cnic + " is already Verified!")
                 res.status(409).send('Customer already verified');
             }
             else 
             {
+                // verify user in db
+                logger.info("User " + validation.cnic + " has been verified!")
                 const verifyUser = await Users.query().patch({is_verified: true}).where('id', '=', validation.id);
-                
                 // generate jwt for redirection to change password from front-end
                 token = await generateJwt(result);
                 if (!token) 
@@ -679,7 +683,7 @@ router.post('/verify', async(req, res) => {
     catch(err)
     {
         // bad request
-        console.log(err);   // remove this console log
+        logger.error(err);  
         return res.status(400).send('Invalid data received');
     }
 });

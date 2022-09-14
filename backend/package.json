@@ -20,6 +20,7 @@
     "nodemon": "^2.0.19",
     "objection": "^3.0.1",
     "pg": "^8.8.0",
+    "winston": "^3.8.2",
     "swagger-jsdoc": "^6.2.5",
     "swagger-ui-express": "^4.5.0"
   }
