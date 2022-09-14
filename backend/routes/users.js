@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-// importing libraries for JWT and password encryption
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+// importing libraries for JWT, password encryption
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 // importing app configurations
 const config = require('config');
@@ -17,6 +17,9 @@ const auth = require('../middleware/auth');
 
 // importing logger
 const logger = require('../startup/logger');
+
+// importing nodemailer transporter
+const transporter = require('../startup/nodemailer.js')
 
 // generates JWT
 const generateJwt = async (query) => {
@@ -492,6 +495,45 @@ router.post('/', auth, async (req, res) => {
                     }]
                 })
                 logger.log("New Customer " + cnic + " and Order created.")
+
+                // send email with verification link to the newly created customer
+                const verificationMailOptions = {
+                    from: config.get('nodeMailer.auth.user'),
+                    to: cnicCheck[0].email,
+                    subject: 'Account Verification',
+                    text: `Please click on this URL to verify your account: _url_` 
+                    };
+                
+                transporter.sendMail(verificationMailOptions, function(error)
+                {
+                    if (error) {
+                        logger.log(error);
+                    } else {
+                        logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with verification link');
+                    }
+                });
+
+                // send email with new order's tracking ID
+                const trackingIdMailOptions = {
+                    from: config.get('nodeMailer.auth.user'),
+                    to: cnicCheck[0].email,
+                    subject: 'Your Tracking ID',
+                    text: `Your order's tracking ID is: ${insertQuery.id}. Order details are as follows:
+                            Car Name: ${insertQuery.vehicle_name}
+                            Car Model: ${insertQuery.vehicle_model}
+                            Car Color: ${insertQuery.vehicle_color}
+                            Expected date of delivery of the order is ${insertQuery.delivery_date} ` 
+                    };
+                
+                transporter.sendMail(trackingIdMailOptions, function(error)
+                {
+                    if (error) {
+                        logger.log(error);
+                    } else {
+                        logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
+                    }
+                });
+
                 return res.status(200).send(insertQuery);
             }
             catch (err)
@@ -518,11 +560,11 @@ router.post('/', auth, async (req, res) => {
                 const deliveryDate = new Date(offsetDateInMillisec).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
                 const config = configurationQuery[0];
 
-                const customerId = parseInt(cnicCheck[0].id);
+                // const customerId = parseInt(cnicCheck[0].id);
                 const userId = parseInt(cnicCheck[0].id);
                 
                 const insertQuery = await Users.relatedQuery('Order')
-                                                .for(customerId)
+                                                .for(userId)
                                                 .insert({
                                                     cnic: cnic,
                                                     vehicle_name: vehicleName,
@@ -534,7 +576,30 @@ router.post('/', auth, async (req, res) => {
                                                     user_id: userId,
                                                     config: config
                                                 })
+
                 logger.info("New Order Created for User " + cnic)
+                
+                // send email with new order's tracking ID
+                const trackingIdMailOptions = {
+                    from: config.get('nodeMailer.auth.user'),
+                    to: cnicCheck[0].email,
+                    subject: 'Your Tracking ID',
+                    text: `Your order's tracking ID is: ${insertQuery.id}. Order details are as follows:
+                           Car Name: ${insertQuery.vehicle_name}
+                           Car Model: ${insertQuery.vehicle_model}
+                           Car Color: ${insertQuery.vehicle_color}
+                           Expected date of delivery of the order is ${insertQuery.delivery_date} ` 
+                  };
+                
+                transporter.sendMail(trackingIdMailOptions, function(error)
+                {
+                    if (error) {
+                      logger.log(error);
+                    } else {
+                      logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
+                    }
+                });
+                
                 return res.status(200).send(insertQuery);
             }
             catch (err)
