@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
+
+// importing libraries for JWT and password encryption
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const logger = require("../logger");
 
 // importing app configurations
 const config = require('config');
@@ -13,6 +14,9 @@ const { Configurations } = require('../models/configurations');
 
 // importing middleware
 const auth = require('../middleware/auth');
+
+// importing logger
+const logger = require('../startup/logger');
 
 // generates JWT
 const generateJwt = async (query) => {

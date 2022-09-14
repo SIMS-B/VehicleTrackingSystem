@@ -1,16 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const logger = require("../logger");
 
 const { Orders } = require('../models/orders');   // importing model for this route
 
 // importing middleware
 const auth = require('../middleware/auth');
 
-// importing libraries
-const knex = require('knex');
-const { route } = require('./users');
-const { Logger } = require('winston');
+// importing logger
+const logger = require('../startup/logger');
 
 // ROUTES
 
@@ -174,7 +171,7 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/orders/status:
+ * /api/orders/notify:
  *  get:
  *      description: Get all orders whose status need to be updated
  *      responses:
@@ -187,7 +184,7 @@ router.get('/', auth, async (req, res) => {
  *          401:
  *              $ref: '#/components/responses/noTokenProvided'
  */
-router.get('/status', auth, async(req, res) => {
+router.get('/notify', auth, async(req, res) => {
     try
     {
         let showOrders=[];

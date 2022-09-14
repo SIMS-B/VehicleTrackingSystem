@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const logger = require("../logger");
 
 const { Configurations, validateConfig } = require('../models/configurations');   // importing model for this route
 
 // importing middleware
 const auth = require('../middleware/auth');
+
+// importing logger
+const logger = require('../startup/logger');
 
 // ROUTES
 
