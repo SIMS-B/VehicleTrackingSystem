@@ -88,6 +88,20 @@ const inputValid = async (creds) => {
 
 // ROUTES
 
+/**
+ * @swagger
+ * /api/users:
+ *  get:
+ *      description: Get Account Info
+ *      responses:
+ *          200: 
+ *              description: Account Info has been fetched successfully
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
+
 router.get('/', auth, async (req, res) => {
     try
     {
@@ -106,6 +120,55 @@ router.get('/', auth, async (req, res) => {
         return res.status(400).send('Invalid data received');
     }
 });
+
+/**
+ * @swagger
+ * /api/users/customers:
+ *  get:
+ *      description: Get Customer(s) List
+ *      parameters:
+ *          - name: cnic
+ *            in: query
+ *            description: Cnic that needs to be fetched
+ *            schema:
+ *              type: integer
+ *          - name: email
+ *            in: query
+ *            description: Email that needs to be fetched
+ *            schema:
+ *              type: string
+ *          - name: first_name
+ *            in: query
+ *            description: First Name that needs to be fetched
+ *            schema:
+ *              type: string
+ *          - name: last_name
+ *            in: query
+ *            description: Last Name that needs to be fetched
+ *            schema:
+ *              type: string
+ *          - name: registration_date
+ *            in: query
+ *            description: Registration Date that needs to be fetched
+ *            schema:
+ *              type: string
+ *          - name: is_verified
+ *            in: query
+ *            description: Verified/Un-Verified that needs to be fetched
+ *            schema:
+ *              type: boolean
+ *      responses:
+ *          200: 
+ *              description: Customer(s) list has been fetched successfully
+ *          204: 
+ *              description: There are no customers that match filters
+ *          403:
+ *              description: Customer is unauthorized to fetch Customer(s) List
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 
 router.get('/customers', auth, async(req, res) => {
     try
@@ -128,7 +191,9 @@ router.get('/customers', auth, async(req, res) => {
                 // filter based on query parameter(s)
                 const allCustomers = await Users.query().modify((QueryBuilder) => {
                     Object.keys(queryParams).map((key) => {
-                        QueryBuilder.where(key, queryParams[key]);
+                        QueryBuilder
+                            .select('cnic', 'email', 'first_name', 'last_name', 'registration_date', 'is_verified')
+                            .where(key, queryParams[key]);
                     });
 
                     QueryBuilder.where('is_admin', '<>' , true);
@@ -159,6 +224,36 @@ router.get('/customers', auth, async(req, res) => {
         return res.status(400).send('Invalid data received');
     }
 });
+
+/**
+ * @swagger
+ * /api/users:
+ *  put:
+ *      description: Update Email, Phone Number, or Password
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          oldPassword:
+ *                              type: string
+ *                          newPassword:
+ *                              type: string
+ *                          newEmail:
+ *                              type: string
+ *                          newPhoneNumber:
+ *                              type: integer
+ *      responses:
+ *          200: 
+ *              description: Info updated successfully
+ *          422:
+ *              description: Validation check(s) failed against new info
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 
 router.put('/', auth, async (req, res) => {
     
@@ -288,6 +383,41 @@ router.put('/', auth, async (req, res) => {
         }
     } 
 });
+
+/**
+ * @swagger
+ * /api/users:
+ *  post:
+ *      description: Admin creates a new customer/order
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          firstName:
+ *                              type: string
+ *                          lastName:
+ *                              type: string
+ *                          email:
+ *                              type: string
+ *                          phoneNumber:
+ *                              type: integer
+ *                          password:
+ *                              type: string
+ *                          vehicleName:
+ *                              type: string
+ *                          vehicleModel:
+ *                              type: string
+ *                          vehicleColor:
+ *                              type: string
+ *      responses:
+ *          200: 
+ *              description: Customer/Order Created Successfully
+ *          400:
+ *              description: Invalid Data Received
+ */
 
 router.post('/', auth, async (req, res) => {
     try 
@@ -420,6 +550,35 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/users/login:
+ *  post:
+ *      description: Admin/User Login
+ *      requestBody:
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          cnic:
+ *                              type: integer
+ *                          email:
+ *                              type: string
+ *                          password:
+ *                              required: true
+ *                              type: string
+ *      responses:
+ *          200: 
+ *              description: User logged in successfully
+ *          422:
+ *              description: Validation check(s) failed against login credentials
+ *          400:
+ *              description: Invalid Data Received
+ *          401:
+ *              description: User has not been verified
+ */
+
 router.post('/login', async(req, res) => {
     try
     {
@@ -458,6 +617,33 @@ router.post('/login', async(req, res) => {
         return res.status(400).send('Invalid data received');
     }
 });
+
+/**
+ * @swagger
+ * /api/users/verify:
+ *  post:
+ *      description: User Verification
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          cnic:
+ *                              type: integer
+ *                          password:
+ *                              type: string
+ *      responses:
+ *          200: 
+ *              description: Customer has been verified
+ *          422:
+ *              description: Validation check(s) failed against credentials
+ *          400:
+ *              description: Invalid Data Received
+ *          409:
+ *              description: Customer already verified
+ */
 
 router.post('/verify', async(req, res) => {
     try

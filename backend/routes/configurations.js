@@ -81,7 +81,7 @@ router.get('/', auth, async (req, res) => {
  *          403:
  *              description: Customer is unauthorized to fetch configurations
  *          422:
- *              description: Validation check(s) failed agsinst new configuration(s)
+ *              description: Validation check(s) failed against new configuration(s)
  *          400:
  *              $ref: '#/components/responses/BadRequestOrInvalidToken'
  *          401:
