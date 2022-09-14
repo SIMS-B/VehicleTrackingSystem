@@ -1,6 +1,51 @@
 const express = require('express');
 const app = express();
 
+// importing and setting up swagger
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const options = {
+    swaggerDefinition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'VTS',
+            version: '1.0.0',
+        },
+        servers: [
+            {
+                url: 'http://localhost:8080'    // put this in config
+            },
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT'
+                }
+            },
+            responses: {
+                noTokenProvided: {
+                    description: 'Access token not provided'
+                },
+                BadRequestOrInvalidToken: {
+                    description: 'Bad request or invalid token provided'
+                }
+            }
+        },
+        security: [
+            {
+                bearerAuth: []
+            }
+        ]  
+    },
+    apis: ["./routes/*.js"],  // update path after refactoring
+};
+
+const swaggerSpecs = swaggerJsDoc(options);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
 // importing app configurations
 const config = require('config');
 
