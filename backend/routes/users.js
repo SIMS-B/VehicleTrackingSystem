@@ -130,6 +130,8 @@ router.get('/customers', auth, async(req, res) => {
                     Object.keys(queryParams).map((key) => {
                         QueryBuilder.where(key, queryParams[key]);
                     });
+
+                    QueryBuilder.where('is_admin', '<>' , true);
                 });
  
                 if (allCustomers.length == 0)
