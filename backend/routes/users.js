@@ -92,16 +92,15 @@ const inputValid = async (creds) => {
  * @swagger
  * /api/users:
  *  get:
- *      description: Get Account Info
+ *      description: Get account information for customer or admin
  *      responses:
  *          200: 
- *              description: Account Info has been fetched successfully
+ *              description: Account information for customer or admin has been fetched successfully
  *          400:
  *              $ref: '#/components/responses/BadRequestOrInvalidToken'
  *          401:
  *              $ref: '#/components/responses/noTokenProvided'
  */
-
 router.get('/', auth, async (req, res) => {
     try
     {
@@ -159,17 +158,16 @@ router.get('/', auth, async (req, res) => {
  *              type: boolean
  *      responses:
  *          200: 
- *              description: Customer(s) list has been fetched successfully
+ *              description: List of customers has been fetched successfully
  *          204: 
- *              description: There are no customers that match filters
+ *              description: There are no customer(s) that match the provided filters
  *          403:
- *              description: Customer is unauthorized to fetch Customer(s) List
+ *              description: Customer is unauthorized to fetch list of customers
  *          400:
  *              $ref: '#/components/responses/BadRequestOrInvalidToken'
  *          401:
  *              $ref: '#/components/responses/noTokenProvided'
  */
-
 router.get('/customers', auth, async(req, res) => {
     try
     {
@@ -229,7 +227,7 @@ router.get('/customers', auth, async(req, res) => {
  * @swagger
  * /api/users:
  *  put:
- *      description: Update Email, Phone Number, or Password
+ *      description: Update email/phone number/password for customer or admin
  *      requestBody:
  *          content:
  *              application/json:
@@ -246,15 +244,14 @@ router.get('/customers', auth, async(req, res) => {
  *                              type: integer
  *      responses:
  *          200: 
- *              description: Info updated successfully
+ *              description: Infomation (email/phone number/password) updated successfully
  *          422:
- *              description: Validation check(s) failed against new info
+ *              description: Validation check(s) failed against new information (email/phone number/password)
  *          400:
  *              $ref: '#/components/responses/BadRequestOrInvalidToken'
  *          401:
  *              $ref: '#/components/responses/noTokenProvided'
  */
-
 router.put('/', auth, async (req, res) => {
     
     const userId = parseInt(req.user.id);
@@ -388,7 +385,7 @@ router.put('/', auth, async (req, res) => {
  * @swagger
  * /api/users:
  *  post:
- *      description: Admin creates a new customer/order
+ *      description: Create new customer and his/her associated order OR create new order for existing customer
  *      requestBody:
  *          required: true
  *          content:
@@ -414,11 +411,10 @@ router.put('/', auth, async (req, res) => {
  *                              type: string
  *      responses:
  *          200: 
- *              description: Customer/Order Created Successfully
+ *              description: Customer/order created successfully
  *          400:
- *              description: Invalid Data Received
+ *              description: Bad request, invalid data received
  */
-
 router.post('/', auth, async (req, res) => {
     try 
     {
@@ -554,7 +550,8 @@ router.post('/', auth, async (req, res) => {
  * @swagger
  * /api/users/login:
  *  post:
- *      description: Admin/User Login
+ *      description: Login for customer or admin
+ *      security: []
  *      requestBody:
  *          content:
  *              application/json:
@@ -572,13 +569,12 @@ router.post('/', auth, async (req, res) => {
  *          200: 
  *              description: User logged in successfully
  *          422:
- *              description: Validation check(s) failed against login credentials
+ *              description: Validation check(s) failed against the provided login credentials
  *          400:
- *              description: Invalid Data Received
+ *              description: Bad request, invalid data received
  *          401:
  *              description: User has not been verified
  */
-
 router.post('/login', async(req, res) => {
     try
     {
@@ -622,7 +618,8 @@ router.post('/login', async(req, res) => {
  * @swagger
  * /api/users/verify:
  *  post:
- *      description: User Verification
+ *      description: Customer verification
+ *      security: []
  *      requestBody:
  *          required: true
  *          content:
@@ -638,13 +635,12 @@ router.post('/login', async(req, res) => {
  *          200: 
  *              description: Customer has been verified
  *          422:
- *              description: Validation check(s) failed against credentials
+ *              description: Validation check(s) failed against the provided credentials
  *          400:
- *              description: Invalid Data Received
+ *              description: Bad request, invalid data received
  *          409:
  *              description: Customer already verified
  */
-
 router.post('/verify', async(req, res) => {
     try
     {

@@ -55,7 +55,7 @@ router.get('/', auth, async (req, res) => {
  * @swagger
  * /api/configurations:
  *  post:
- *      description: update configuration(s)
+ *      description: Update configuration(s)
  *      requestBody:
  *          required: true
  *          content:
