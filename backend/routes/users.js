@@ -152,7 +152,7 @@ router.get('/customers', auth, async(req, res) => {
     catch (err)
     {
         //bad request
-        console.log(err); // remove this console log
+        logger.error(err); // remove this console log
         return res.status(400).send('Invalid data received');
     }
 });
