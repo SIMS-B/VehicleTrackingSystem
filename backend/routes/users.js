@@ -21,6 +21,11 @@ const logger = require('../startup/logger');
 // importing nodemailer transporter
 const transporter = require('../startup/nodemailer.js')
 
+//importing twilio for sms
+const accountSid = config.get('twilio.TWILIO_ACCOUNT_SID');
+const authToken = config.get('twilio.TWILIO_AUTH_TOKEN');
+const client = require('twilio')(accountSid, authToken);
+
 // generates JWT
 const generateJwt = async (query) => {
     const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, config.get('jwt'));
@@ -452,7 +457,10 @@ router.post('/', auth, async (req, res) => {
                 const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
                 const password = Math.random().toString(36).slice(2, 10).toString();
                 
-                logger.info("First Time Random Generated Password: " + password)
+                // message to be sent after account creation
+                const message = "Dear " + firstName + ", \nYour First Time VTS Login Password is: " + password;
+                // adding country code prefix to the phone number from database
+                const mobileNumber = phoneNumber.replace(phoneNumber, '+92' + phoneNumber)
                 
                 const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
                 const isVerified = false;
@@ -504,6 +512,16 @@ router.post('/', auth, async (req, res) => {
                     text: `Please click on this URL to verify your account: _url_` 
                     };
                 
+                // send verification message with temporary password to newly created customer
+                client.messages
+                    .create({
+                        body: message,
+                        from: '+19567585926',
+                        to: mobileNumber
+                            })
+                    .then(message => logger.info("Verification Message with Password Sent to Customer " + cnic  + " with SMS id " + message.sid))
+                    .catch((err) => logger.error(err));
+                
                 transporter.sendMail(verificationMailOptions, function(error)
                 {
                     if (error) {
@@ -533,6 +551,7 @@ router.post('/', auth, async (req, res) => {
                         logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
                     }
                 });
+
 
                 return res.status(200).send(insertQuery);
             }
@@ -652,7 +671,20 @@ router.post('/login', async(req, res) => {
     {
         const logCreds = req.body;
         const result = await inputValid(logCreds);
-        
+
+        // adding country prefix to the phone number from database
+        const phoneNumber = result.phone_number.replace(result.phone_number, '+92' + result.phone_number)
+        const message = "Your First TIme VTS Login Password is: " + req.body.password
+        //
+        client.messages
+        .create({
+            body: message,
+            from: '+19567585926',
+            to: phoneNumber
+                })
+        .then(message => logger.info("Verification Message with Password Sent to: " + " with SMS id " + message.sid));
+
+
         if (!result)
         {
             // unprocessable entity as input

@@ -30,5 +30,10 @@
           "user": "",
           "pass": ""
         }
+    },
+    
+    "twilio": {
+        "TWILIO_ACCOUNT_SID": "ACa392575c32a246434d7cfc16521a126e",
+        "TWILIO_AUTH_TOKEN": "feb6031a27529cb418c321c07760bc8d"
     }
 }
