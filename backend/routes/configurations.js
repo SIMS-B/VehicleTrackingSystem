@@ -8,6 +8,21 @@ const auth = require('../middleware/auth');
 
 // ROUTES
 
+/**
+ * @swagger
+ * /api/configurations:
+ *  get:
+ *      description: Get all configurations
+ *      responses:
+ *          200: 
+ *              description: Admin is able to fetch configurations successfully
+ *          403:
+ *              description: Customer is unauthorized to fetch configurations
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.get('/', auth, async (req, res) => {
     try
     {
@@ -36,6 +51,42 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/configurations:
+ *  post:
+ *      description: Update configuration(s)
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      type: object
+ *                      properties:
+ *                          po_reception:
+ *                              type: integer
+ *                          factory_floor:
+ *                              type: integer
+ *                          vin:
+ *                              type: integer
+ *                          chassis:
+ *                              type: integer
+ *                          ready_to_ship:
+ *                              type: integer
+ *                          arrival_at_vendor:
+ *                              type: integer
+ *      responses:
+ *          200: 
+ *              description: Admin is able to update configuration(s) successfully
+ *          403:
+ *              description: Customer is unauthorized to fetch configurations
+ *          422:
+ *              description: Validation check(s) failed against new configuration(s)
+ *          400:
+ *              $ref: '#/components/responses/BadRequestOrInvalidToken'
+ *          401:
+ *              $ref: '#/components/responses/noTokenProvided'
+ */
 router.post('/', auth, async (req, res) => {
     try
     {
