@@ -106,6 +106,57 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+router.get('/customers', auth, async(req, res) => {
+    try
+    {
+        const queryParams = req.query;
+        const numberOfParameters = Object.keys(queryParams).length;
+        if(req.user.is_admin)
+        {
+            if (numberOfParameters == 0)
+            {
+                // return all customers if there are no query parameters to filter on
+                const allCustomers = await Users.query()
+                                                    .select('cnic', 'email', 'first_name', 'last_name', 'registration_date', 'is_verified')
+                                                    .where('is_admin', '<>', true)
+
+                return res.status(200).send(allCustomers);
+            }
+            else
+            {
+                // filter based on query parameter(s)
+                const allCustomers = await Users.query().modify((QueryBuilder) => {
+                    Object.keys(queryParams).map((key) => {
+                        QueryBuilder.where(key, queryParams[key]);
+                    });
+                });
+ 
+                if (allCustomers.length == 0)
+                {
+                    // length being 0 means that filter(s) match no result(s)
+                    return res.status(204).send('Filter(s) do not match any result');
+                }
+                else
+                {
+                    // sucessful filteration with valid results
+                    return res.status(200).send(allCustomers);
+                }
+            }
+        }
+        else
+        {
+            // customer is forbidden to view this information
+            return res.status(403).send('You cannot access this page');
+        }
+    }
+    catch (err)
+    {
+        //bad request
+        console.log(err); // remove this console log
+        return res.status(400).send('Invalid data received');
+    }
+});
+
 router.put('/', auth, async (req, res) => {
     
     const userId = parseInt(req.user.id);
