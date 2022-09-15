@@ -37,7 +37,6 @@ router.get('/', auth, async (req, res) => {
             // admin gets access to configuration
             const defaultConfigs = await Configurations.query()
                                                         .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor')
-                                                        .where('id', '=', 1);
             
             return res.status(200).send(defaultConfigs[0]);
         }
