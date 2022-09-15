@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 // importing app configurations
-const config = require('config');
+const appConfig = require('config');
 
 // importing model for this route
 const { Users, validatePassword, validateAdmin, validateUser, validatePhoneNumber, validateEmail } = require('../models/users');   
@@ -21,9 +21,14 @@ const logger = require('../startup/logger');
 // importing nodemailer transporter
 const transporter = require('../startup/nodemailer.js')
 
+//importing twilio for sms
+const accountSid = appConfig.get('twilio.TWILIO_ACCOUNT_SID');
+const authToken = appConfig.get('twilio.TWILIO_AUTH_TOKEN');
+const client = require('twilio')(accountSid, authToken);
+
 // generates JWT
 const generateJwt = async (query) => {
-    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, config.get('jwt'));
+    const token = await jwt.sign({is_admin: query.is_admin, id: query.id}, appConfig.get('jwt'));
     
     if (query.is_admin) 
     {
@@ -100,6 +105,7 @@ const inputValid = async (creds) => {
  * /api/users:
  *  get:
  *      description: Get account information for customer or admin
+ *      tags: [Users]
  *      responses:
  *          200: 
  *              description: Account information for customer or admin has been fetched successfully
@@ -131,6 +137,7 @@ router.get('/', auth, async (req, res) => {
  * /api/users/customers:
  *  get:
  *      description: Get Customer(s) List
+ *      tags: [Users]
  *      parameters:
  *          - name: cnic
  *            in: query
@@ -234,6 +241,7 @@ router.get('/customers', auth, async(req, res) => {
  * /api/users:
  *  put:
  *      description: Update email/phone number/password for customer or admin
+ *      tags: [Users]
  *      requestBody:
  *          content:
  *              application/json:
@@ -291,7 +299,7 @@ router.put('/', auth, async (req, res) => {
                 if (passwordValidationCheck.error == null)
                 {
                     // hashing new password
-                    const hashedPassword = await bcrypt.hash(newPassword, config.get('saltRounds'))
+                    const hashedPassword = await bcrypt.hash(newPassword, appConfig.get('saltRounds'))
 
                     // update the old password with new hashed one in db
                     const updatedUser = await Users.query()
@@ -396,6 +404,7 @@ router.put('/', auth, async (req, res) => {
  * /api/users:
  *  post:
  *      description: Create new customer and his/her associated order OR create new order for existing customer
+ *      tags: [Users]
  *      requestBody:
  *          required: true
  *          content:
@@ -403,6 +412,8 @@ router.put('/', auth, async (req, res) => {
  *                  schema:
  *                      type: object
  *                      properties:
+ *                          cnic:
+ *                              type: integer
  *                          firstName:
  *                              type: string
  *                          lastName:
@@ -411,8 +422,6 @@ router.put('/', auth, async (req, res) => {
  *                              type: string
  *                          phoneNumber:
  *                              type: integer
- *                          password:
- *                              type: string
  *                          vehicleName:
  *                              type: string
  *                          vehicleModel:
@@ -433,7 +442,7 @@ router.post('/', auth, async (req, res) => {
                                                         .select('po_reception', 'factory_floor', 'vin', 'chassis', 'ready_to_ship', 'arrival_at_vendor');
 
         const configurationSum = parseInt(configurationQuery[0].po_reception) + parseInt(configurationQuery[0].factory_floor) + parseInt(configurationQuery[0].vin) + parseInt(configurationQuery[0].chassis) + parseInt(configurationQuery[0].ready_to_ship) + parseInt(configurationQuery[0].arrival_at_vendor);
-
+        
         // check if user with cnic exists or not
         const cnic = parseInt(req.body.cnic);
         const cnicCheck = await Users.query()
@@ -451,15 +460,12 @@ router.post('/', auth, async (req, res) => {
                 const email = req.body.email.toString();    // validate email
                 const phoneNumber = parseInt(req.body.phoneNumber);    // validate phone number
                 const password = Math.random().toString(36).slice(2, 10).toString();
-                
-                logger.info("First Time Random Generated Password: " + password)
-                
                 const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
                 const isVerified = false;
                 const isAdmin = false;
 
                 // bcrypt password hash
-                const hashedPassword = await bcrypt.hash(password, config.get('saltRounds'))
+                const hashedPassword = await bcrypt.hash(password, appConfig.get('saltRounds'))
 
                 const vehicleName = req.body.vehicleName.toString();
                 const vehicleModel = req.body.vehicleModel.toString();
@@ -494,45 +500,62 @@ router.post('/', auth, async (req, res) => {
                         config: config
                     }]
                 })
-                logger.log("New Customer " + cnic + " and Order created.")
+
+                logger.info("New Customer " + cnic + " and Order created.")
 
                 // send email with verification link to the newly created customer
                 const verificationMailOptions = {
-                    from: config.get('nodeMailer.auth.user'),
-                    to: cnicCheck[0].email,
+                    from: appConfig.get('nodeMailer.auth.user'),
+                    to: email,
                     subject: 'Account Verification',
                     text: `Please click on this URL to verify your account: _url_` 
                     };
-                
+
                 transporter.sendMail(verificationMailOptions, function(error)
                 {
                     if (error) {
-                        logger.log(error);
+                        logger.error(error);
                     } else {
-                        logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with verification link');
+                        logger.info('Email sent to ' + (cnic).toString() + ' with verification link');
                     }
                 });
 
                 // send email with new order's tracking ID
                 const trackingIdMailOptions = {
-                    from: config.get('nodeMailer.auth.user'),
-                    to: cnicCheck[0].email,
+                    from: appConfig.get('nodeMailer.auth.user'),
+                    to: email,
                     subject: 'Your Tracking ID',
-                    text: `Your order's tracking ID is: ${insertQuery.id}. Order details are as follows:
-                            Car Name: ${insertQuery.vehicle_name}
-                            Car Model: ${insertQuery.vehicle_model}
-                            Car Color: ${insertQuery.vehicle_color}
-                            Expected date of delivery of the order is ${insertQuery.delivery_date} ` 
+                    text: `Your order's tracking ID is: ${insertQuery.Order[0].id}. Order details are as follows:
+                            Car Name: ${vehicleName}
+                            Car Model: ${vehicleModel}
+                            Car Color: ${vehicleColor}
+                            Expected date of delivery of the order is ${deliveryDate}` 
                     };
                 
                 transporter.sendMail(trackingIdMailOptions, function(error)
                 {
                     if (error) {
-                        logger.log(error);
+                        logger.error(error);
                     } else {
-                        logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
+                        logger.info('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
                     }
                 });
+
+                // message to be sent after account creation
+                const message = "Dear " + firstName + ", \nYour First Time VTS Login Password is: " + password;
+                // adding country code prefix to the phone number from database
+                const mobileNumber = phoneNumber.toString().replace(phoneNumber, '+92' + phoneNumber)
+                
+                // send verification message with temporary password to newly created customer
+                client.messages
+                    .create({
+                        body: message,
+                        from: '+19567585926',
+                        to: mobileNumber
+                            })
+                    .then(message => logger.info("Verification Message with Password Sent to Customer " + cnic  + " with SMS id " + message.sid))
+                    .catch((err) => logger.error(err));
+
 
                 return res.status(200).send(insertQuery);
             }
@@ -581,7 +604,7 @@ router.post('/', auth, async (req, res) => {
                 
                 // send email with new order's tracking ID
                 const trackingIdMailOptions = {
-                    from: config.get('nodeMailer.auth.user'),
+                    from: appConfig.get('nodeMailer.auth.user'),
                     to: cnicCheck[0].email,
                     subject: 'Your Tracking ID',
                     text: `Your order's tracking ID is: ${insertQuery.id}. Order details are as follows:
@@ -594,9 +617,9 @@ router.post('/', auth, async (req, res) => {
                 transporter.sendMail(trackingIdMailOptions, function(error)
                 {
                     if (error) {
-                      logger.log(error);
+                      logger.error(error);
                     } else {
-                      logger.log('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
+                      logger.info('Email sent to ' + (insertQuery.cnic).tostring() + ' with new order tracking ID');
                     }
                 });
                 
@@ -623,6 +646,7 @@ router.post('/', auth, async (req, res) => {
  * /api/users/login:
  *  post:
  *      description: Login for customer or admin
+ *      tags: [Users]
  *      security: []
  *      requestBody:
  *          content:
@@ -652,7 +676,20 @@ router.post('/login', async(req, res) => {
     {
         const logCreds = req.body;
         const result = await inputValid(logCreds);
-        
+
+        // adding country prefix to the phone number from database
+        const phoneNumber = result.phone_number.replace(result.phone_number, '+92' + result.phone_number)
+        const message = "Your First TIme VTS Login Password is: " + req.body.password
+        //
+        client.messages
+        .create({
+            body: message,
+            from: '+19567585926',
+            to: phoneNumber
+                })
+        .then(message => logger.info("Verification Message with Password Sent to: " + " with SMS id " + message.sid));
+
+
         if (!result)
         {
             // unprocessable entity as input
@@ -690,6 +727,7 @@ router.post('/login', async(req, res) => {
  * /api/users/verify:
  *  post:
  *      description: Customer verification
+ *      tags: [Users]
  *      security: []
  *      requestBody:
  *          required: true

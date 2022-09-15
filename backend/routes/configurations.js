@@ -16,6 +16,7 @@ const logger = require('../startup/logger');
  * /api/configurations:
  *  get:
  *      description: Get all configurations
+ *      tags: [Configurations]
  *      responses:
  *          200: 
  *              description: Admin is able to fetch configurations successfully
@@ -59,6 +60,7 @@ router.get('/', auth, async (req, res) => {
  * /api/configurations:
  *  post:
  *      description: Update configuration(s)
+ *      tags: [Configurations]
  *      requestBody:
  *          required: true
  *          content:

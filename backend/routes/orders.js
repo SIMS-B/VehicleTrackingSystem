@@ -16,6 +16,7 @@ const logger = require('../startup/logger');
  * /api/orders:
  *  get:
  *      description: Fetches all orders for admin OR fetches all orders of a customer
+ *      tags: [Orders]
  *      parameters:
  *          - name: cnic
  *            in: query
@@ -174,6 +175,7 @@ router.get('/', auth, async (req, res) => {
  * /api/orders/notify:
  *  get:
  *      description: Get all orders whose status need to be updated
+ *      tags: [Orders]
  *      responses:
  *          200: 
  *              description: Admin is able to fetch fetch orders that are to be updated successfully
@@ -251,6 +253,7 @@ router.get('/notify', auth, async(req, res) => {
  * /api/orders:
  *  put:
  *      description: Update Delivery date
+ *      tags: [Orders]
  *      requestBody:
  *          required: true
  *          content:
@@ -348,6 +351,7 @@ router.put('/', auth, async(req, res) => {
  * /api/orders/status:
  *  put:
  *      description: Update Delivery date
+ *      tags: [Orders]
  *      requestBody:
  *          required: true
  *          content:
