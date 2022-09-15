@@ -408,6 +408,8 @@ router.put('/', auth, async (req, res) => {
  *                  schema:
  *                      type: object
  *                      properties:
+ *                          cnic:
+ *                              type: integer
  *                          firstName:
  *                              type: string
  *                          lastName:
@@ -416,8 +418,6 @@ router.put('/', auth, async (req, res) => {
  *                              type: string
  *                          phoneNumber:
  *                              type: integer
- *                          password:
- *                              type: string
  *                          vehicleName:
  *                              type: string
  *                          vehicleModel:
@@ -460,7 +460,7 @@ router.post('/', auth, async (req, res) => {
                 // message to be sent after account creation
                 const message = "Dear " + firstName + ", \nYour First Time VTS Login Password is: " + password;
                 // adding country code prefix to the phone number from database
-                const mobileNumber = phoneNumber.replace(phoneNumber, '+92' + phoneNumber)
+                const mobileNumber = phoneNumber.toString().replace(phoneNumber, '+92' + phoneNumber)
                 
                 const registrationDate = new Date(currDate).toISOString().slice(0, 10).toString(); // YYYY-MM-DD
                 const isVerified = false;
