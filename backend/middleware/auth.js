@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 // importing app configurations
-const config = require('config');
+const appConfig = require('config');
 
 module.exports = function(req, res, next) {
 
@@ -18,7 +18,7 @@ module.exports = function(req, res, next) {
     
     try 
     {
-        const decoded = jwt.verify(token, config.get('jwt'));
+        const decoded = jwt.verify(token, appConfig.get('jwt'));
         req.user = decoded;
         next();
     } 

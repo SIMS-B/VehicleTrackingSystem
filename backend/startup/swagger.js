@@ -1,7 +1,7 @@
 const swaggerJsDoc = require('swagger-jsdoc');
 
 // importing app configurations
-const config = require('config');
+const appConfig = require('config');
 
 const options = {
     swaggerDefinition: {
@@ -12,12 +12,12 @@ const options = {
         },
         servers: [
             {
-                url: config.get('swaggerServerURL')    // put this in config
+                url: appConfig.get('swaggerServerURL')
             },
         ],
         components: {
             securitySchemes: {
-                bearerAuth: config.get('swaggerBearerAuth')
+                bearerAuth: appConfig.get('swaggerBearerAuth')
             },
             responses: {
                 noTokenProvided: {

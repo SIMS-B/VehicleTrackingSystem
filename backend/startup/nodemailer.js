@@ -1,8 +1,8 @@
 const nodemailer = require('nodemailer');
 
 // importing app configurations
-const config = require('config');
+const appConfig = require('config');
 
-const transporter = nodemailer.createTransport(config.get('nodeMailer'));
+const transporter = nodemailer.createTransport(appConfig.get('nodeMailer'));
 
 module.exports = transporter;
